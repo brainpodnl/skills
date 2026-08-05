@@ -1,0 +1,5 @@
+{
+  "name": "brainpod-deploy",
+  "description": "Deploy and verify applications on BrainPod with the brainpod CLI.",
+  "version": "1.0.0"
+}
