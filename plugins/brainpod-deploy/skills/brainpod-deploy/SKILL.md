@@ -1,7 +1,7 @@
 ---
 name: brainpod-deploy
 description: Deploy an application to BrainPod from scratch using the brainpod CLI — create a pod, build and push a container image, compose resources (App, Route, Postgres, MariaDB, Valkey, Disk, Config), promote the draft revision, and verify the deployment is actually serving traffic. Use this skill whenever the user wants to deploy, ship, host, or publish an application to BrainPod, or mentions brainpod, a "pod", brainpod.io, or the brainpod CLI — including when they only say something like "get this running on brainpod" or "deploy this repo" in a project that already targets BrainPod. Also use it for redeploys, for adding a database or route to an existing pod, and for diagnosing a deployment that reports as deployed but is not responding.
-compatibility: Requires the `brainpod` CLI on PATH and a BrainPod API token in BRAINPOD_TOKEN. Docker or a compatible builder is required for image builds.
+compatibility: Requires the `brainpod` CLI on PATH and authentication from `brainpod login`, CLI config, or `BRAINPOD_API_TOKEN`. Docker with Buildx is required for image builds.
 ---
 
 # Deploying to BrainPod
@@ -23,8 +23,9 @@ brainpod describe <subcommand> --json
 
 This is authoritative for flags, arguments, and output shapes. This skill
 deliberately does not restate the flag surface, because a stale flag list
-is worse than no flag list. Pass `--json` on every call — it yields
-complete API responses *and* complete error envelopes.
+is worse than no flag list. Pass `--json` on every call. Buffered commands
+emit exactly one complete JSON value on stdout; JSON errors are written to
+stderr. Event watches are the exception and emit NDJSON on stdout.
 
 ## Registration and login belong to the user
 
@@ -79,8 +80,9 @@ brainpod whoami --json
 - **Fails** → do not proceed. If the CLI and a browser are on the same
   machine, offer to run `brainpod login` (see above) and re-check `whoami`.
   Otherwise stop and report exactly this: create an API token in the
-  BrainPod dashboard, `export BRAINPOD_TOKEN=<token>`, and re-run. Include
-  the `error.code` and `requestId` from the response.
+  BrainPod dashboard, `export BRAINPOD_API_TOKEN=<token>`, and re-run. The
+  CLI also accepts `--api-token` or `brainpod config set api-token <token>`.
+  Include the `error.code` and `requestId` from an API response.
 
 `UNAUTHORIZED` means the token is absent, malformed, or expired.
 `FORBIDDEN` means the token is valid but its policy lacks the required
@@ -100,6 +102,9 @@ ambiguity to the user rather than guessing.
 Capture the returned pod name from the response. It is required for every
 subsequent pod-scoped command, and the pod's private registry namespace is
 derived from it — which means **pod creation must precede the image push**.
+Pass `--pod <name>` explicitly throughout the run; otherwise the CLI falls
+back to `BRAINPOD_POD` and then its configured default, which may select a
+different pod.
 
 If the user pointed you at an existing pod, use it, and treat Step 4's
 draft check as mandatory rather than a formality.
@@ -107,9 +112,16 @@ draft check as mandatory rather than a formality.
 ## Step 3: Build and push the image
 
 The builder handles stack detection itself — an existing Dockerfile is
-preferred, otherwise Railpack — and always targets `linux/amd64` and pushes
-to the pod's namespace under `registry.brainpod.io`. Do not attempt to
-detect the stack or choose a builder.
+preferred, otherwise Railpack — and pushes to the pod's namespace under
+`registry.brainpod.io`. Do not attempt to detect the stack or choose a
+builder.
+
+Let `brainpod image build` choose the platform unless the user has a specific
+requirement. The CLI queries active clusters, reads their `architectures[]`,
+uses a supported configured or preferred architecture, and stores the chosen
+architecture in its config. An explicit `--platform` is validated against the
+cluster response. Do not duplicate this selection logic or infer support from
+the build result.
 
 Two platform facts shape what you generate:
 
@@ -140,12 +152,15 @@ Design around the runtime uid either way:
 `reference` along with `platform` and the resolved `user` — use that
 reference directly as `spec.image` rather than re-deriving it. A follow-up
 `image inspect` is worth one call to cross-check `exposedPorts` against the
-Route's port, but is not needed to obtain the digest.
+Route's port, but is not needed to obtain the digest. The CLI defaults
+`image inspect` visibility to `pod`; pass `--visibility public` only for a
+public image. The underlying API's accepted visibility values are `public`
+and `pod`.
 
-**Parse the build output carefully.** Even with `--json`, the builder
-interleaves progress output with the final JSON result, so the response is
-not a single clean JSON document. Take the last JSON object rather than
-piping the whole stream into a parser.
+**Parse stdout normally.** Image build progress is written to stderr, while
+`--json` emits one final JSON document on stdout. Parse stdout as a single
+value; do not merge the two streams or scrape the last brace from combined
+output.
 
 ## Step 4: Compose resources — validate before mutating
 
@@ -155,18 +170,33 @@ draft that you did not put there — and `deploy` promotes all of it.
 
 Work in this order:
 
-1. **Dry-run first.** Resource creation supports a validation mode that
-   checks the manifest without creating a draft or resources. Use it on
-   every generated manifest. A `VALIDATION_ERROR` response carries
-   `details[]` entries with a `path` and `message` per problem, so correct
-   the manifest against those paths and re-validate rather than guessing.
-2. **Then mutate**, creating the resources for real.
-3. **Then inspect the draft** — list the draft's resources and diff it
-   against its base. If it contains anything you did not just create,
-   **stop and report**. Do not deploy a draft you cannot fully account for.
-4. **Record the draft's checksum.** There is no `If-Match` on deploy, so
-   this is your only concurrency guard: re-read the checksum immediately
-   before promoting and abort if it changed.
+1. **Build one JSON batch.** `resource create --file` accepts either one JSON
+   resource or an array; the CLI normalizes one object to an array. Put every
+   related new resource — for example the App and Route — in one array file.
+   `--file -` reads the JSON from stdin.
+2. **Dry-run the whole batch first.** Run `resource create` on that file with
+   `--dry-run --json`. A valid batch returns `{ "valid": true }` and creates
+   nothing. A `VALIDATION_ERROR` carries `details[]` entries with a `path` and
+   `message`, so correct those paths and re-validate rather than guessing.
+3. **Then mutate once** by sending the same file without `--dry-run`. Capture
+   `revisionId` from the mutation response. `resource replace` is different:
+   it accepts one JSON object and has no dry-run flag; deletes also cannot be
+   dry-run. For either, rely on the schema before mutation and inspect the
+   resulting diff immediately afterwards.
+4. **Inspect the draft with the CLI's diff command.** Run `revision diff`
+   with the captured revision id and `--json`; with no `--base`, it compares
+   against the revision's parent. Account for every `entries[]` item:
+   `{ kind, name, changeType, patch }`, where `changeType` is `create`,
+   `update`, or `delete`. Use
+   `--base <revision>` only when deliberately comparing against something
+   other than the parent. If the diff contains anything unintended, **stop
+   and report**.
+5. **Re-check the current head and diff immediately before deploy.** Run
+   `pod get <pod> --json`; it must still show the expected `head.id` and
+   `head.status: draft`. Pod revision state is named `status` here. Re-run
+   `revision diff <head.id> --json` and abort if it no longer matches. Do not
+   use `RevisionDetail.checksum` as the sole guard: it is nullable. If you
+   surface the checksum at all, handle `null` explicitly.
 
 ### Resource kinds
 
@@ -185,20 +215,26 @@ inferring the shape — and never read another pod's resources to learn it,
 which exposes unrelated configuration and teaches you one project's
 conventions instead of the contract.
 
-Two things the schema won't tell you:
+Contract details worth pinning:
 
-- **Omit `spec.hostname` on `Route`.** The field is optional, but the
-  platform assigns a hostname and returns it, and that assigned value is what
-  you report to the user. Don't invent one.
-- Cross-resource references are URNs — an App's `mounts[].disk` and a Route's
-  `rules[].backendRef` both take `urn:brain:<kind>:default:<name>`, which you
-  get back from the resource commands.
+- **Omit `spec.hostname` on `Route`.** `hostname` is required on the returned
+  `Resource` but not on `ResourceInput`: the platform assigns it during
+  creation. Report that returned value rather than inventing one.
+- Cross-resource references are URNs — an App's `mounts[].disk`, a database's
+  `diskRef`, and a Route's `rules[].backendRef` take
+  `urn:brain:<kind>:default:<name>`. Because names are in the batch, compose
+  those references before sending it.
+- `App.spec` requires `image`, `env`, `instance`, and `replicas`. `env` is
+  required even when empty, and `replicas` must be from 1 through 10.
+- App instance sizes include `.25x`; database instance enums do not. Read each
+  kind's own enum instead of reusing the App value.
+- `Postgres.spec.version` currently accepts only `"16"`.
 
 Minimal recipes:
 
 - **Stateless web service** — `App` + `Route`
-- **With a database** — `App` + `Route` + one of `Postgres` / `MariaDB` /
-  `Valkey`
+- **With a database** — `App` + `Route` + `Disk` + one of `Postgres` /
+  `MariaDB` / `Valkey`; every database kind requires `diskRef`
 - **Persistent files** — add `Disk` and reference it from the App's mounts
 - **Config files at runtime** — add `Config`
 
@@ -213,128 +249,78 @@ resource to remove `spec.artifactSelector` and set its static digest-pinned
 `spec.image`. This is preferred to trying to replace the blueprint's App
 manifest before installation.
 
-### Wiring credentials with exports
+### Runtime values and disk permissions
 
-Resources publish exports that are interpolated into env vars, keyed on the
-resource name — e.g. a database named `maindb` exposes references like
-`${maindb.uri}`, `${maindb.username}`, `${maindb.password}`. **Do not
-guess export names.** Read the actual exports published by the resource
-you created and reference those. A wrong export name is the single most
-likely silent failure in a generated manifest: it presents as the app
-crashing on a missing environment variable, with nothing pointing back at
-the typo.
+`App.spec.env` is a flat array of `{ name, value }`, and every `value` must be
+a non-empty string. The resource API exposes no exports or interpolation
+contract, so do not generate `${resource.field}` references or claim that
+created resources publish credentials. Only use substitution syntax when a
+selected blueprint's own documentation explicitly defines it; otherwise use
+concrete values supplied through a documented input.
 
-If a disk is mounted and the runtime uid cannot write to it, an init command
-that chowns the mount path to the container's uid/gid is required — 1000 on
-the Railpack path, or whatever uid the Dockerfile declares.
+For a mounted disk that is not writable by the runtime user, prefer
+`App.spec.runtime.fsGroup`; `runtime` also provides `uid` and `gid`. A chown
+init step is only the workaround when `fsGroup` cannot solve it. Its actual
+field is `App.spec.lifecycle.init`, and it accepts a command string,
+`{ cmd: string }`, or `{ image: string, cmd: string[] }`.
 
-## Step 5: Deploy and poll
+## Step 5: Deploy and wait
 
-`deploy` accepts a wait of at most **20 seconds** and returns **202
-Accepted** with a revision id while work continues. It is therefore *not*
-a completion signal — a 202 says the job was queued, nothing more.
+Use the CLI's health-gated wait instead of polling by hand:
 
-Poll the revision until it reaches a terminal state. **The field is `state`**
-— not `status`. `revision get` returns `state`, but the pod payload's `head`
-and `deployed` objects use `status` for the same concept. Reading the wrong
-key yields `None`, which never matches a terminal value, and the loop spins
-until it hits its budget.
-
-Poll with backoff against an overall budget (~10 minutes is reasonable).
-States are linear:
-
-```
-draft → pending → ready → deployed
-                              ↘ failed
+```bash
+brainpod --pod <pod> deploy --summary <summary> --wait --timeout 600 --json
 ```
 
-- `pending` — queued, not yet picked up
-- `ready` — resources prepared
-- `deployed` — applied to the cluster (terminal)
-- `failed` — terminal
-- `canceled` — effectively unreachable outside GitHub auto-deploys; treat
-  as terminal and report rather than retry
+The default timeout is 90 seconds. On success, this returns the complete
+revision after every resource reports `healthy: true`; `failed` and
+`canceled` stop the wait. The CLI does not expose the API's `watch` parameter.
 
-Because the states are ordered, diagnose stalls by *transition*, not
-elapsed time: stuck in `pending` means the queue has not picked the job up,
-while stuck in `ready` means resources are prepared but the cluster is not
-converging — worth surfacing early instead of burning the whole budget.
+Reattach without deploying again:
 
-Poll with backoff against an overall budget (~10 minutes is reasonable).
-On timeout, report the last observed state and the revision id; do not
-redeploy to "unstick" it.
+```bash
+brainpod --pod <pod> revision wait <revisionId> --timeout 600 --json
+```
 
-### Discriminating failure causes
+`redeploy` is only for the current failed head and has no `--wait`; capture
+its `revisionId`, then run `revision wait`. Never redeploy to poke a timeout
+or an unhealthy deployed revision.
 
-`failed` covers two situations with opposite remedies, so use the
-transition it died on:
+Revision payloads use `state`; `pod get` uses `head.status` and
+`deployed.status`. On failure or timeout, run
+`revision get <revisionId> --json`, report its `state` and `error`, and do not
+infer transitions you did not observe.
 
-- **Never reached `ready`** → resource preparation or rendering failed. The
-  manifest is wrong. Fix it, dry-run, and try again.
-- **Reached `ready`, then failed** → the cluster rejected or could not run
-  it. Read app events. Do not start rewriting the manifest first.
+## Step 6: Verify health
 
-Always include the revision's `error` field verbatim in your report.
+Report success only when the returned revision has `state: deployed` and
+every `resources[]` item has `healthy: true`. The CLI wait checks health but
+not the final revision state, so verify both.
 
-## Step 6: Verify — `deployed` does not mean healthy
+Do not require `status.phase: Ready` for every kind. `status` is
+kind-specific and may be null: workloads have replica status, Disk has
+`phase`/`bound`/`ready`, and Config or Route may expose only `ready`.
 
-`deployed` means *applied to the cluster*. A container in a crash loop, a
-failing health check, or an app that exits on boot all sit behind
-`deployed`, because the apply itself succeeded. **Never report a
-deployment as live on the strength of `deployed` alone.**
+For an unhealthy workload, report its URN and replica `name`, `phase`, and
+`reason` when present. Query events only as drill-down:
 
-After reaching `deployed`, sweep events for the resources you created.
-Events are queried per resource URN (`urn:brain:<kind>:default:<name>`,
-for kinds `app`, `postgres`, `mariadb`, `valkey`, `route`). The CLI's `--kind`
-values are `app`, `http-access`, and `platform` — note the hyphen. Use the
-URNs returned by the resource commands rather than constructing them.
+- Omit `--kind` for all streams. Do not apply a level filter to app startup
+  diagnostics; `--level` is valid only with `--kind app`.
+- The CLI value `http-access` maps to API value `httpAccess`.
+- Route and Disk have no workload event stream. Zero events is not a health
+  verdict.
+- Event `--watch` reconnects until interrupted; `--duration` is per request.
+  Prefer a bounded non-watch query for diagnosis.
 
-Check in this order:
-
-1. **Platform events** — the authoritative signal. Look for `reason` values:
-   `Created` and `Started` then `BackOff` means the container is crash-looping.
-2. **App events with no level filter.** **Do not filter by `--level error`.**
-   Container startup failures — a missing entrypoint, an exec failure, an
-   immediate exit — are logged at level `info`, so an error-level query
-   returns an empty list and looks perfectly healthy. That empty result is
-   the single most dangerous false negative in this whole workflow.
-3. **Route `http-access` events** — confirms the route actually serves
-   traffic. Zero events on a route that should be live means nothing has ever
-   reached it.
-
-A container that reached `deployed` but never started is now an *application*
-problem, not an image problem — root images and architecture mismatches are
-rejected at resource creation, so they cannot get this far. Look at a bad
-start command, a missing or wrong environment variable, an unresolvable
-`${...}` export reference, or a dependency the app expects and can't reach.
-
-### When the app won't start, report — don't perform forensics
-
-If the manifest validated and the revision reached `deployed` but the
-container won't run, **collect the events, report, and stop.** Do not unpack
-image layers, extract binaries, or inspect ELF headers. That path burns
-enormous time and context to reach a conclusion the events already implied,
-and it fills the transcript with output nobody needs. State what the events
-show, name the two likely causes above, and hand back to the user.
-
-Likewise, **do not create resources in order to test a hypothesis.**
-Deploying a probe app to compare behaviour mutates shared state, costs the
-user compute, and leaves a permanent entry in the pod's revision history. If
-a diagnostic deploy would genuinely settle the question, describe it and ask
-first.
-
-Event watches are also capped at ~20 seconds and resume via cursor, so tail
-in bounded chunks rather than expecting one long stream.
-
-If app errors appear, report them with the deployment result. A deployment
-that applied cleanly but is crash-looping should be reported as **failed to
-start**, not as a success with caveats.
+If a resource remains unhealthy, report it as failed to start. Do not unpack
+images or create probe resources; ask before any diagnostic deployment.
 
 ## Error handling
 
-Every error carries a stable `code`, a `message`, and a `requestId`.
-**Always surface the `requestId`** — it is how the user gets support
-correlation. Map codes to actions:
+Every API error carries a stable `code`, a `message`, and a `requestId`.
+In `--json` mode the CLI preserves that envelope on stderr and adds
+`httpStatus`. **Always surface the `requestId`** — it is how the user gets
+support correlation. Map codes to actions:
 
 | Code | Action |
 |---|---|
@@ -347,28 +333,24 @@ correlation. Map codes to actions:
 | `REQUEST_TOO_LARGE`, `BAD_REQUEST` | Stop. Do not retry unchanged |
 | `INTERNAL_ERROR` | One retry at most, then stop and report with `requestId` |
 
-Note that build and deployment failures **do not appear in this enum**.
-They arrive as a revision in `failed` state with an `error` string. An
-agent that branches only on `error.code` will read a failed deployment as a
-success, because `deploy` returned 202. Check both channels.
+If `VALIDATION_ERROR.details[].path` starts with `limits.`, surface the CLI's
+`resolution` and `upgradeUrl`; it is an account limit, not a bad manifest.
 
-Local and registry operations are a third channel: an `image build` or push
-failure can return `code: "CLI_ERROR"` with no `requestId`, wrapping an
-underlying registry response. Treat these on their message rather than the
-table above. A registry `403 DENIED` for the pod's own namespace immediately
-after `pod create` may be authorization propagation — retry once after a
-short delay before reporting it, since the push is idempotent and safe to
-repeat.
+Build, wait, and registry failures use `CLI_ERROR` without `requestId`.
+Inspect the named revision after a wait failure. A registry `403 DENIED`
+immediately after pod creation may be propagation; retry the push once after
+a short delay.
 
 ## Reporting
 
 On success, report: pod name, revision id and version, the URL from the
-route, and confirmation that app events are clean.
+route, confirmation that the revision returned `state: deployed`, and that
+every resource returned `healthy: true`. State that this was the readiness
+definition used.
 
-On failure, report: the stage that failed, the revision state and its
-`error`, the `error.code` and `requestId` if there was an API error, and
-relevant app events. State plainly what the user needs to do. Do not
-present a partial deployment as a success.
+On failure, report: stage, revision state and error, API code and request ID
+when present, and each unhealthy resource's status or replica reason. Include
+events only as drill-down. Do not present a partial deployment as success.
 
 ## Leaving things clean
 
