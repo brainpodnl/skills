@@ -12,6 +12,41 @@ mutations and blueprint installs accumulate in a mutable draft revision;
 about *draft state* and *post-deploy health*, not about individual command
 invocations — and both are addressed explicitly below.
 
+## Install the CLI if it is missing
+
+Check for `brainpod` on `PATH` before starting. The CLI is available from
+[brainpodnl/cli](https://github.com/brainpodnl/cli) for Linux and macOS on
+amd64 and arm64.
+
+Once version `0.0.1` or newer is published, use the latest GitHub release.
+Until then, use the artifacts from the successful **Build** workflow run for
+the latest commit on `main`. A run looks like
+[brainpodnl/cli/actions/runs/31046421685](https://github.com/brainpodnl/cli/actions/runs/31046421685);
+do not pin that example, because workflow artifacts expire. Select the artifact
+matching the host:
+
+- `brainpod-amd64-linux`
+- `brainpod-arm64-linux`
+- `brainpod-amd64-macos`
+- `brainpod-arm64-macos`
+
+With an authenticated GitHub CLI, download and extract the artifact with:
+
+```bash
+gh run download <run-id> -R brainpodnl/cli -n <artifact-name>
+```
+
+Extract the resulting `.tar.gz`, make `brainpod` executable, and place it in a
+user-writable directory on `PATH`. Otherwise, download the same artifact from
+the workflow run page. The macOS binary is not notarized yet, so if Gatekeeper
+blocks it, remove the quarantine attribute after downloading:
+
+```bash
+xattr -d com.apple.quarantine <path-to-brainpod>
+```
+
+Do not attempt installation on another OS or architecture.
+
 ## Read the contract at runtime — do not rely on this file for flags
 
 The CLI is self-describing. Before composing any command, get its
