@@ -204,11 +204,18 @@ evidence of either.
 
 **The pod console page is `<dashboard endpoint>/pods/<pod name>`**, on the same
 endpoint `login` uses: `BRAINPOD_DASHBOARD_ENDPOINT` where it is set, and
-`https://brainpod.io` otherwise. **Do not open it when the pod is created** —
-there is nothing running to look at yet, and it replaces the page that is
-actually reporting progress. Open it when you start deploying, which is when it
-has something to show, and leave the user there at the end: it is the one page
-that outlives the session.
+`https://brainpod.io` otherwise. **Switch to it once the image is built and
+before you compose the draft** — not when the pod is created, and not once the
+deploy has landed. Earlier and there is nothing on it to watch while the build
+runs, and it displaces the page that is reporting that build. Later and the
+user is handed a finished result instead of seeing it happen: from this point
+the page fills in with the resources as you compose them and then the deploy
+going live, which is the part worth watching. Leave them there at the end, too;
+it is the one page that outlives the session.
+
+The session console keeps recording behind it, so switching costs the user
+nothing — its page is still on disk and still being written, and the steps you
+record after the switch are there when they go back to it.
 
 ## The session console
 
