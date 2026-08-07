@@ -78,16 +78,16 @@ phrased for the user rather than about them:
 
 > **Where should sign-in and your pod page open?**
 >
-> - **My usual browser** (default) — where your logins and password manager
->   already are.
-> - **Here in this session** — a browser pane in the conversation, no window
->   to switch to.
+> - **Embedded browser** (recommended) — opens here in the conversation, so
+>   you can watch the deploy without switching windows.
+> - **Default browser** — the browser you already use, where your logins and
+>   password manager are.
 
 The first asks what the user has done, not how technical they consider
 themselves; keep it that way, because self-assessment is unreliable in both
-directions. Ask the second only where the harness actually has a pane to offer.
-Everywhere else there is nothing to choose, so do not stage a decision with one
-real answer.
+directions. Ask the second only where the harness actually has an embedded
+browser to offer. Everywhere else there is nothing to choose, so do not stage a
+decision with one real answer.
 
 Record both where the harness has memory. They are facts about the user rather
 than about this project, so — unlike the deploy fact above — they are not
@@ -97,12 +97,29 @@ Where the harness cannot ask, infer the experience answer from how the user
 phrased the request and assume the middle one. Either way, revise your read when
 the conversation contradicts it rather than holding the answer against the
 evidence. The browser answer is not something to infer: unasked or unanswered
-means the default browser.
+means the embedded browser wherever the harness has one, and the default
+browser everywhere else.
 
-The experience answer sets how much you explain, how much jargon you use
-unglossed, and how often you check in. It changes nothing else — not the gates,
-not what you verify before deploying, not the confirmations before a destructive
-operation. An experienced user gets terser narration, not a shorter path.
+The experience answer sets the register, and the distance between the ends of
+it is large:
+
+- **Never** — everyday words only. Introduce each new term in plain language
+  the first time it appears (a pod is where your app lives, an image is your
+  app packaged up to run, a revision is a saved version of the setup) and say
+  what a step is for before running it. Check in at each milestone and say
+  what happens next. Never present a raw error; say what went wrong, what it
+  means, and what you are doing about it.
+- **Through a platform** — assume deploying, environment variables, and logs
+  are familiar, and gloss only what is BrainPod's own: the draft-then-promote
+  model, pods, resource kinds.
+- **Yes, hands-on** — use the vocabulary directly and keep narration to what
+  is running, what came back, and anything surprising. Commands and raw output
+  are welcome here.
+
+It changes nothing else — not the gates, not what you verify before deploying,
+not the confirmations before a destructive operation. An experienced user gets
+terser narration, not a shorter path, and a first-timer gets more explanation,
+not fewer checks.
 
 ## Talking to the user
 
@@ -152,17 +169,21 @@ console page. Both follow the same rules.
 fail without saying so, and a URL the user can click is the one recovery that
 does not depend on the next step working.
 
-**Open it where the user asked you to.** Their own browser is the default and
-the answer whenever the question was not asked, not answered, or not
-remembered. It is where their logins and password manager already are, and it
-outlives the session.
+**Open it where the user asked you to, and recommend the embedded browser.** It
+is the better experience by some distance: the page arrives without a context
+switch, and the console page can sit alongside the work while it fills in. Use
+it wherever the harness has one unless the user chose otherwise, including when
+the question was never asked. The default browser is the fallback and the right
+call whenever they picked it, since that is where their logins and password
+manager already are.
 
-**Where they chose the in-session pane, the pane has to end up in front of
-them.** Say what is about to appear before it does. In some harnesses loading
-the URL and fronting the pane are separate calls, so use whatever your browser
-tooling offers to bring it forward, including when a pane is already open, and
-confirm the page is what the user is actually looking at. A navigation call
-that returned successfully is not evidence of either.
+**The embedded browser then has to end up in front of them**, or the advantage
+is gone and you have opened the page nowhere. Say what is about to appear
+before it does. In some harnesses loading the URL and fronting the pane are
+separate calls, so use whatever your browser tooling offers to bring it
+forward, including when the pane is already open, and confirm the page is what
+the user is actually looking at. A navigation call that returned successfully
+is not evidence of either.
 
 **The pod console page is `<dashboard endpoint>/pods/<pod name>`**, on the same
 endpoint `login` uses: `BRAINPOD_DASHBOARD_ENDPOINT` where it is set, and
@@ -262,40 +283,42 @@ with the token and the CLI stores it — the user never types or pastes one.
 Drive it yourself rather than letting it drive you:
 
 ```bash
-brainpod login --json
+brainpod login --json --no-browser
 ```
 
-`--json` makes stdout NDJSON — an `authorize` line carrying `url` and
-`expiresInSeconds` printed immediately, then an `authenticated` line carrying
-the user once the callback lands. Run it in the background, take `url` off the
+`--no-browser` suppresses the CLI's own launch so you choose where the URL
+opens, which is what the embedded browser needs; drop it where the user picked
+the default browser or the harness has no embedded one, and the CLI opens the
+default browser itself. `--json` makes stdout NDJSON — an `authorize` line
+carrying `url` and `expiresInSeconds` printed immediately, then an
+`authenticated` line carrying the user once the callback lands. Run it in the background, take `url` off the
 first line, and treat the `authenticated` line as the success signal instead of
 polling `whoami`.
 
-On the default answer that is the whole of it, since the CLI opens the user's
-browser itself. Add `--no-browser` only where they chose the in-session pane, to
-suppress that launch so the URL opens where they asked. Either way the
-`authorize` line is printed before any browser is touched, so put that `url` in
-chat, and where you are the one opening it, open it by **Putting a page in front
-of the user** above. Nothing will tell you if it never appeared: a browser that
-failed to launch is only a warning to the CLI, which keeps waiting either way.
+The `authorize` line is printed before any browser is touched either way, so put
+that `url` in chat, and where you are the one opening it, open it by **Putting a
+page in front of the user** above. Nothing will tell you if it never appeared: a
+browser that failed to launch is only a warning to the CLI, which keeps waiting
+either way.
 
 Opening is not delivering. If the `authenticated` line has not landed within a
 minute, ask the user whether the sign-in page is actually in front of them and
 re-surface the URL — do not sit out the ten-minute window waiting on a page that
 was never visible.
 
-Two constraints override the pane here even when the user chose it, because
-they are about sign-in specifically rather than about panes. Neither bears on
-the console page, which needs no callback:
+Two constraints override the embedded browser here whatever the user chose,
+because they are about sign-in specifically. Neither bears on the console page,
+which needs no callback:
 
-- **The browser has to reach this machine's loopback.** A pane that renders
-  somewhere else, or a URL the user opens on another device, authorizes
-  successfully and still leaves the CLI unauthenticated: the redirect lands on a
-  `127.0.0.1` where nothing is listening. `--no-browser` fixes "the browser did
-  not launch", not "there is no browser here".
-- **The callback carries a live token as a query parameter.** In your own pane
-  that credential passes through your context — never echo, log, or persist it,
-  and do not go extracting it, because the CLI has already stored it.
+- **The browser has to reach this machine's loopback.** An embedded browser
+  that renders somewhere else, or a URL the user opens on another device,
+  authorizes successfully and still leaves the CLI unauthenticated: the
+  redirect lands on a `127.0.0.1` where nothing is listening. `--no-browser`
+  fixes "the browser did not launch", not "there is no browser here".
+- **The callback carries a live token as a query parameter.** In an embedded
+  browser that credential passes through your context — never echo, log, or
+  persist it, and do not go extracting it, because the CLI has already stored
+  it.
 
 If `--no-browser` is rejected as an unknown argument, the binary predates the
 flag; reinstall it through Gate 1 rather than working around it.
@@ -316,7 +339,7 @@ supplying consent and credentials is theirs. Concretely: do not complete a
 signup or login yourself — entering an email, accepting terms of service,
 clearing a challenge, or clicking through a consent screen attributes an
 agreement to the user that they never read. Opening the page is the whole of
-your part; driving a pane you opened up to the approve button is not. This
+your part; driving a browser you opened up to the approve button is not. This
 holds hardest when a browser tool is already operating in the user's
 authenticated session, because the click is indistinguishable from theirs. The same applies to API tokens: point at the
 page where one is created, but do not mint one on the user's behalf, because
