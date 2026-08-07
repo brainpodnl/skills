@@ -1,6 +1,6 @@
 {
   "name": "brainpod",
-  "version": "1.7.0",
+  "version": "1.8.0",
   "description": "Build it in Codex. Ship it in seconds. Deploy, operate, and debug applications on BrainPod with the brainpod CLI.",
   "author": {
     "name": "BrainPod",

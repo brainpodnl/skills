@@ -76,7 +76,7 @@ phrased for the user rather than about them:
 >   dashboard.
 > - **Yes, hands-on** — I've run my own servers or containers.
 
-> **Where should sign-in and your pod page open?**
+> **Where should the deploy page and sign-in open?**
 >
 > - **Embedded browser** (recommended) — opens here in the conversation, so
 >   you can watch the deploy without switching windows.
@@ -162,16 +162,14 @@ session hung will kill it mid-deploy.
 
 ## Putting a page in front of the user
 
-Two pages come up in a session: the sign-in URL from `login`, and the pod's
-console page. Both follow the same rules.
+Three pages come up: the session console from `agent start`, the sign-in URL
+from `login`, and the pod's console page. The rules below hold for all three.
 
-**Print the URL in chat first, every time.** Every way of opening a page can
-fail without saying so, and a URL the user can click is the one recovery that
-does not depend on the next step working.
+**Print the URL or path in chat first, every time.** Every way of opening a page
+can fail without saying so, and something the user can click is the one recovery
+that does not depend on the next step working.
 
-**Open it where the user asked you to, and recommend the embedded browser.** It
-is the better experience by some distance: the page arrives without a context
-switch, and the console page can sit alongside the work while it fills in. Use
+**Open it where the user asked you to, and recommend the embedded browser.** Use
 it wherever the harness has one unless the user chose otherwise, including when
 the question was never asked. The default browser is the fallback and the right
 call whenever they picked it, since that is where their logins and password
@@ -179,18 +177,59 @@ manager already are.
 
 **The embedded browser then has to end up in front of them**, or the advantage
 is gone and you have opened the page nowhere. Say what is about to appear
-before it does. In some harnesses loading the URL and fronting the pane are
-separate calls, so use whatever your browser tooling offers to bring it
-forward, including when the pane is already open, and confirm the page is what
-the user is actually looking at. A navigation call that returned successfully
-is not evidence of either.
+before it does. In some harnesses loading the page and fronting the pane are
+separate calls, so use whatever your browser tooling offers to bring it forward,
+including when the pane is already open, and confirm the page is what the user
+is actually looking at. A navigation call that returned successfully is not
+evidence of either.
 
 **The pod console page is `<dashboard endpoint>/pods/<pod name>`**, on the same
 endpoint `login` uses: `BRAINPOD_DASHBOARD_ENDPOINT` where it is set, and
-`https://brainpod.io` otherwise. It follows the pod live, so open it as soon as
-the pod name exists and before you deploy. That turns the longest wait in the
-workflow into something the user can watch instead of something they sit
-through, and it leaves them somewhere to look after the session ends.
+`https://brainpod.io` otherwise. It follows the pod live, so open it once the
+pod name exists. It is the one page that outlives the session, so it is where
+you leave the user at the end.
+
+## The session console
+
+`brainpod agent start` writes a page that fills in as the workflow runs, so the
+long waits become something the user watches rather than sits through. Open it
+**before `login`**, as soon as Gate 1 clears. That ordering is what makes the
+rest work: the sign-in page then lands in a browser the user is already looking
+at, rather than being the thing that has to summon one.
+
+**Which mechanism you use is decided by the browser, not by preference.** The
+page reads its session from a file beside it, and the two browsers fail in
+opposite directions:
+
+- **Embedded browser** — open the `console.html` path `agent start` prints.
+  Loading it over loopback instead will not work: an embedded pane runs the
+  page but never shows it to the user.
+- **Default browser** — run `brainpod agent serve` in the background, take the
+  URL off its first line, and open that. Opening the file directly will not
+  work either: an ordinary browser shows the page but it stays empty forever,
+  because reading the session file next to it is blocked.
+
+Getting this backwards produces a page that looks fine to you and is blank or
+invisible to the user, and nothing reports an error. If you cannot tell which
+browser you have, you have the default one.
+
+**Then keep it current, or it lies.** The CLI records the two long steps
+itself — `image build` and `deploy --wait` write their own progress, including
+the resource counts as they come up. Everything else is yours: record each
+step as you start it and again as it lands, so the page never sits on a step
+that finished minutes ago.
+
+**Always finish the session**, on success and on failure alike. An unfinished
+session is indistinguishable from an abandoned one, and after ninety seconds
+of silence the page tells the user the deploy stopped reporting. If you stop
+partway through, finishing as failed is what turns a confusing page into an
+honest one.
+
+`agent start` also adds `.brainpod/` to the repository's `.gitignore` and mints
+a new session, discarding any previous one. Both are deliberate: nothing the
+console does should show up in the user's diff, and a second run must never
+leave the last deploy's steps showing beneath the new one. Start once per
+workflow, not once per step.
 
 ## Onboarding is part of the job
 
@@ -200,7 +239,8 @@ inside the session rather than handing over a list of steps, and only ask the
 user to act when the step genuinely requires their consent or their
 credentials.
 
-Two gates, in order. Clear both before any other workflow.
+Two gates, in order, with the session console opened between them. Clear both
+before any other workflow.
 
 ## Gate 1: the `brainpod` binary
 
@@ -252,6 +292,13 @@ xattr -d com.apple.quarantine <path-to-brainpod>
 
 Confirm with `brainpod describe --json` before moving on. Do not proceed on an
 assumption that the install worked.
+
+## Between the gates: open the session console
+
+With a working binary and before `login`, start the console and put it in
+front of the user by **The session console** above. It needs no API token, so
+it works here, and doing it now is what gives the sign-in page somewhere to
+land. Record clearing Gate 1 as its first step.
 
 ## Gate 2: an authenticated session
 
@@ -394,4 +441,6 @@ Build, wait, and registry failures use `CLI_ERROR` and carry no `requestId`.
 If you stop partway through after mutating the draft, say so explicitly and
 name the pod — an abandoned draft means the *next* deploy on that pod will
 promote your partial work. Telling the user is the difference between a
-recoverable stop and a confusing failure later.
+recoverable stop and a confusing failure later. Stopping is also the case
+where finishing the session matters most: leave the page saying the deploy
+failed rather than still claiming to be working.
