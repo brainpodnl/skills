@@ -65,18 +65,34 @@ no timing, and do not go hunting for a flag that exposes it.
 
 ## Step 2: Work out what the project needs
 
-The user may not know, and should not have to. Decide from the source, then
-state the shape you settled on in one or two plain sentences before building —
-a wrong assumption is cheap to correct now and expensive after a failed deploy.
+**The build is not yours to work out.** `image build` uses a `Dockerfile` at
+the context root when one is there and otherwise runs Railpack, which detects
+the stack itself — language, package manager, install and build commands, and
+a start command. Do not hand-write a Dockerfile for a project Railpack already
+handles, and do not derive a build command to pass along: there is nowhere to
+pass one. Only the Dockerfile path obliges you to add a non-root `USER`
+(Step 4).
 
-Determine from the source itself:
+Railpack announces what it detected while the build runs (Step 4), so read
+that rather than predicting it. Steer it with `railpack.json` at the context
+root — the CLI passes no builder flags of its own, so `RAILPACK_*` variables
+in the environment do nothing, and a `Procfile` `web:` entry sets the start
+command. If Railpack cannot work out the stack at all, plan generation fails
+and the build stops before anything is pushed: a `railpack.json` or a
+Dockerfile to write, not a retry.
 
-- **How it builds.** A `Dockerfile` at the context root means the Dockerfile
-  path; otherwise Railpack detects the stack. Only the former obliges you to
-  add a non-root `USER` (Step 4).
+Railpack settles nothing about the resource graph, and the user may not know
+it either. Decide the rest from the source, then state the shape you settled
+on in one or two plain sentences before building — a wrong assumption is cheap
+to correct now and expensive after a failed deploy.
+
 - **What port it listens on.** Read it from the app's own configuration rather
   than assuming, and check whether the framework expects to be told via a
-  `PORT` environment variable. It must be ≥ 1024.
+  `PORT` environment variable. Railpack's start commands bind `$PORT` wherever
+  the provider knows how, defaulting to 80 for the Caddy-served static, SPA,
+  and PHP outputs — which the runtime uid cannot bind at all. Set `PORT` in
+  `App.spec.env` to a value ≥ 1024 and give the Route rule that same number
+  rather than trusting any default.
 - **Whether it needs a database.** ORM configuration, migration directories,
   and connection-string environment variables are the signal. Every database
   kind also requires a `Disk`.
@@ -111,10 +127,10 @@ check as mandatory rather than a formality.
 
 ## Step 4: Build and push the image
 
-`brainpod image build` detects the stack and pushes to the pod's namespace
-under `registry.brainpod.io`. Docker login is not required; the CLI
-authenticates with the API token, which must allow `registry:push` for the
-pod. Let it choose the platform too unless the user has a specific
+`brainpod image build` builds by the path Step 2 settled and pushes to the
+pod's namespace under `registry.brainpod.io`. Docker login is not required;
+the CLI authenticates with the API token, which must allow `registry:push` for
+the pod. Let it choose the platform too unless the user has a specific
 requirement — it resolves one from the active clusters and validates an
 explicit `--platform` against them. Do not duplicate that selection logic or
 infer support from the build result. On ARM hosts, the runtime must provide
@@ -135,10 +151,12 @@ crash-looping:
 
 Design around the runtime uid either way. Binding a port below 1024 fails at
 runtime with an error that looks nothing like a permissions problem, and any
-path the app writes must be writable by that uid — if the build creates it as
-root, `chown` it in the build, to 1000 on the Railpack path or to whatever uid
-the Dockerfile declares. Common offenders: framework build caches, SQLite
-files, upload and scratch directories.
+path the app writes must be writable by that uid. On a Dockerfile build,
+`chown` it to the uid that Dockerfile declares. On the Railpack path the
+non-root layer takes ownership of the home directory only, so everything the
+build produced under the app directory stays root-owned — point runtime writes
+at a mounted `Disk` rather than beside the code. Common offenders: framework
+build caches, SQLite files, upload and scratch directories.
 
 **Pin the image by digest.** The build response returns a digest-pinned
 `reference` along with `platform` and the resolved `user` — use that
@@ -149,6 +167,10 @@ Route's port, but is not needed to obtain the digest.
 **Parse stdout normally.** Build progress goes to stderr while `--json` emits
 one final JSON document on stdout. Parse stdout as a single value; do not
 merge the two streams or scrape the last brace from combined output.
+
+That stream is also where Railpack reports what it detected: provider,
+resolved package versions, step commands, start command. Check it against the
+project — a wrong provider builds and pushes cleanly, then fails at runtime.
 
 ## Step 5: Compose resources — validate before mutating
 

@@ -84,7 +84,7 @@ error text rarely names the real cause:
 | Symptom | Likely cause |
 |---|---|
 | Container exits immediately, no app logs | Image runs as root — rejected at resource creation, so this usually surfaces earlier as a validation error |
-| App starts, then dies binding its port | Listening below port 1024; the runtime uid cannot bind privileged ports |
+| App starts, then dies binding its port | Listening below port 1024; the runtime uid cannot bind privileged ports. On a Railpack build with no `PORT` in `App.spec.env`, the Caddy-served static, SPA, and PHP outputs default to 80 |
 | `exec format error` or instant crash loop | Architecture mismatch — compare the build's `platform` against `cluster list` |
 | Permission denied writing a path | Path not writable by the runtime uid; prefer `App.spec.runtime.fsGroup` over a chown init step |
 | Deployed and healthy, but requests 404 or hang | `Route.rules[].backendRef` points at the wrong App, or the Route port does not match the image's `exposedPorts` |
