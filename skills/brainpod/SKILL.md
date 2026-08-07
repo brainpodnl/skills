@@ -185,9 +185,11 @@ evidence of either.
 
 **The pod console page is `<dashboard endpoint>/pods/<pod name>`**, on the same
 endpoint `login` uses: `BRAINPOD_DASHBOARD_ENDPOINT` where it is set, and
-`https://brainpod.io` otherwise. It follows the pod live, so open it once the
-pod name exists. It is the one page that outlives the session, so it is where
-you leave the user at the end.
+`https://brainpod.io` otherwise. **Do not open it when the pod is created** —
+there is nothing running to look at yet, and it replaces the page that is
+actually reporting progress. Open it when you start deploying, which is when it
+has something to show, and leave the user there at the end: it is the one page
+that outlives the session.
 
 ## The session console
 
@@ -196,6 +198,14 @@ long waits become something the user watches rather than sits through. Open it
 **before `login`**, as soon as Gate 1 clears. That ordering is what makes the
 rest work: the sign-in page then lands in a browser the user is already looking
 at, rather than being the thing that has to summon one.
+
+**Declare the whole plan when you start it.** Pass every step you expect to
+take, in order, so the page opens showing the path ahead greyed out and fills
+it in rather than starting blank and growing. An empty page at the moment the
+user first looks is a wasted first impression, and a list that appears a step at
+a time never tells them how much is left. Name the steps for the user, not for
+yourself: *Packaging your app*, not *image build*. Steps you did not plan for
+can still be recorded as they come up.
 
 **Which mechanism you use is decided by the browser, not by preference.** The
 page reads its session from a file beside it, and the two browsers fail in
@@ -217,7 +227,9 @@ browser you have, you have the default one.
 itself — `image build` and `deploy --wait` write their own progress, including
 the resource counts as they come up. Everything else is yours: record each
 step as you start it and again as it lands, so the page never sits on a step
-that finished minutes ago.
+that finished minutes ago. Marking a step started before you do the work also
+keeps the sign-in page honest, because it lists the steps still to come and
+reads a step you have already begun as one of them.
 
 **Always finish the session**, on success and on failure alike. An unfinished
 session is indistinguishable from an abandoned one, and after ninety seconds
@@ -352,6 +364,12 @@ Opening is not delivering. If the `authenticated` line has not landed within a
 minute, ask the user whether the sign-in page is actually in front of them and
 re-surface the URL — do not sit out the ten-minute window waiting on a page that
 was never visible.
+
+**Once it lands, put the session console back.** The sign-in page has done its
+job and the user should not be left staring at it while the workflow carries on
+somewhere they cannot see. Close that tab where your browser tooling can, and
+bring the console forward again. Leaving the sign-in page in front is how a
+session ends up reporting progress to nobody.
 
 Two constraints override the embedded browser here whatever the user chose,
 because they are about sign-in specifically. Neither bears on the console page,
