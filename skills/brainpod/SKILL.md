@@ -57,14 +57,16 @@ Pin nothing: it must still read true after the pod is recreated.
 
 ## Calibrating to the user
 
-This is an onboarding question and belongs nowhere else. Where the harness has
-persistent memory, read the recorded answer first and use it — a returning
-user should never be asked twice. Otherwise ask it once, ahead of the gates,
-where the install and login narration is the first thing it changes; if the
-gates are already clear, skip the question rather than opening a session by
-interviewing someone who just wants a deploy.
+These are the onboarding questions and they belong nowhere else. Where the
+harness has persistent memory, read the recorded answers first and use them —
+a returning user should never be asked twice. Otherwise ask them once, in a
+single prompt ahead of the gates, where the install and login narration is the
+first thing they change. Where the gates are already clear there is little
+narration left to calibrate, so drop the first question rather than opening a
+session by interviewing someone who just wants a deploy; the second still
+earns its place, because the pod page gets opened either way.
 
-Where the harness can put a structured question to the user, put it verbatim,
+Where the harness can put structured questions to the user, put them verbatim,
 phrased for the user rather than about them:
 
 > **Have you deployed an app before?**
@@ -74,22 +76,33 @@ phrased for the user rather than about them:
 >   dashboard.
 > - **Yes, hands-on** — I've run my own servers or containers.
 
-It asks what the user has done, not how technical they consider themselves;
-keep it that way, because self-assessment is unreliable in both directions.
+> **Where should sign-in and your pod page open?**
+>
+> - **My usual browser** (default) — where your logins and password manager
+>   already are.
+> - **Here in this session** — a browser pane in the conversation, no window
+>   to switch to.
 
-Record the answer where the harness has memory. It is a fact about the user
-rather than about this project, so — unlike the deploy fact above — it is not
-contingent on anything succeeding, and it holds across projects and pods.
+The first asks what the user has done, not how technical they consider
+themselves; keep it that way, because self-assessment is unreliable in both
+directions. Ask the second only where the harness actually has a pane to offer.
+Everywhere else there is nothing to choose, so do not stage a decision with one
+real answer.
 
-Where the harness cannot ask, infer it from how the user phrased the request
-and assume the middle answer. Either way, revise your read when the
-conversation contradicts it rather than holding the answer against the
-evidence.
+Record both where the harness has memory. They are facts about the user rather
+than about this project, so — unlike the deploy fact above — they are not
+contingent on anything succeeding, and they hold across projects and pods.
 
-The answer sets how much you explain, how much jargon you use unglossed, and
-how often you check in. It changes nothing else — not the gates, not what you
-verify before deploying, not the confirmations before a destructive operation.
-An experienced user gets terser narration, not a shorter path.
+Where the harness cannot ask, infer the experience answer from how the user
+phrased the request and assume the middle one. Either way, revise your read when
+the conversation contradicts it rather than holding the answer against the
+evidence. The browser answer is not something to infer: unasked or unanswered
+means the default browser.
+
+The experience answer sets how much you explain, how much jargon you use
+unglossed, and how often you check in. It changes nothing else — not the gates,
+not what you verify before deploying, not the confirmations before a destructive
+operation. An experienced user gets terser narration, not a shorter path.
 
 ## Talking to the user
 
@@ -139,15 +152,17 @@ console page. Both follow the same rules.
 fail without saying so, and a URL the user can click is the one recovery that
 does not depend on the next step working.
 
-**Prefer an embedded browser pane** where the harness has one, so the page
-arrives without a context switch, and say what is about to appear before it
-does. **The pane then has to end up in front of the user.** In some harnesses
-loading the URL and fronting the pane are separate calls, so use whatever your
-browser tooling offers to bring it forward, including when a pane is already
-open, and confirm the page is what the user is actually looking at. A
-navigation call that returned successfully is not evidence of either. Where
-there is no pane, open their default browser, which is where their session and
-password manager already are.
+**Open it where the user asked you to.** Their own browser is the default and
+the answer whenever the question was not asked, not answered, or not
+remembered. It is where their logins and password manager already are, and it
+outlives the session.
+
+**Where they chose the in-session pane, the pane has to end up in front of
+them.** Say what is about to appear before it does. In some harnesses loading
+the URL and fronting the pane are separate calls, so use whatever your browser
+tooling offers to bring it forward, including when a pane is already open, and
+confirm the page is what the user is actually looking at. A navigation call
+that returned successfully is not evidence of either.
 
 **The pod console page is `<dashboard endpoint>/pods/<pod name>`**, on the same
 endpoint `login` uses: `BRAINPOD_DASHBOARD_ENDPOINT` where it is set, and
@@ -247,28 +262,31 @@ with the token and the CLI stores it — the user never types or pastes one.
 Drive it yourself rather than letting it drive you:
 
 ```bash
-brainpod login --json --no-browser
+brainpod login --json
 ```
 
-`--no-browser` suppresses the CLI's own launch so you choose where the URL
-opens; `--json` makes stdout NDJSON — an `authorize` line carrying `url` and
+`--json` makes stdout NDJSON — an `authorize` line carrying `url` and
 `expiresInSeconds` printed immediately, then an `authenticated` line carrying
 the user once the callback lands. Run it in the background, take `url` off the
 first line, and treat the `authenticated` line as the success signal instead of
 polling `whoami`.
 
-Then open that `url` by **Putting a page in front of the user** above. Nothing
-will tell you if it never appeared: a browser that failed to launch is only a
-warning to the CLI, which keeps waiting either way. Dropping `--no-browser`
-instead, and letting the CLI open the user's own default browser, is the better
-trade wherever no pane is available.
+On the default answer that is the whole of it, since the CLI opens the user's
+browser itself. Add `--no-browser` only where they chose the in-session pane, to
+suppress that launch so the URL opens where they asked. Either way the
+`authorize` line is printed before any browser is touched, so put that `url` in
+chat, and where you are the one opening it, open it by **Putting a page in front
+of the user** above. Nothing will tell you if it never appeared: a browser that
+failed to launch is only a warning to the CLI, which keeps waiting either way.
 
 Opening is not delivering. If the `authenticated` line has not landed within a
 minute, ask the user whether the sign-in page is actually in front of them and
 re-surface the URL — do not sit out the ten-minute window waiting on a page that
 was never visible.
 
-Two constraints decide whether the embedded route is even open to you:
+Two constraints override the pane here even when the user chose it, because
+they are about sign-in specifically rather than about panes. Neither bears on
+the console page, which needs no callback:
 
 - **The browser has to reach this machine's loopback.** A pane that renders
   somewhere else, or a URL the user opens on another device, authorizes
