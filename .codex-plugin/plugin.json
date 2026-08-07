@@ -1,0 +1,39 @@
+{
+  "name": "brainpod",
+  "version": "1.3.0",
+  "description": "Build it in Codex. Ship it in seconds. Deploy, operate, and debug applications on BrainPod with the brainpod CLI.",
+  "author": {
+    "name": "BrainPod",
+    "url": "https://brainpod.io"
+  },
+  "homepage": "https://brainpod.io",
+  "repository": "https://github.com/brainpodnl/skills",
+  "license": "MIT",
+  "keywords": [
+    "brainpod",
+    "deployment",
+    "paas",
+    "docker",
+    "infrastructure",
+    "devops"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "BrainPod",
+    "shortDescription": "Build it in Codex. Ship it in seconds.",
+    "longDescription": "Build it in Codex. Ship it in seconds. Reusable workflows for the brainpod CLI: deploying an application from source to a running pod, changing what an existing pod runs, and diagnosing a deployment that is failing or unhealthy.",
+    "developerName": "BrainPod",
+    "category": "Developer Tools",
+    "capabilities": [
+      "Read",
+      "Write"
+    ],
+    "defaultPrompt": [
+      "Deploy this repository to BrainPod.",
+      "Add a Postgres database to my BrainPod pod.",
+      "My BrainPod deployment is unhealthy — find out why."
+    ],
+    "websiteURL": "https://brainpod.io",
+    "brandColor": "#6366F1"
+  }
+}

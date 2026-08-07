@@ -1,0 +1,23 @@
+{
+  "name": "brainpod",
+  "displayName": "BrainPod",
+  "version": "1.3.0",
+  "description": "Build it in Cursor. Ship it in seconds. Deploy, operate, and debug applications on BrainPod with the brainpod CLI.",
+  "author": {
+    "name": "BrainPod",
+    "url": "https://brainpod.io"
+  },
+  "homepage": "https://brainpod.io",
+  "repository": "https://github.com/brainpodnl/skills",
+  "license": "MIT",
+  "keywords": [
+    "brainpod",
+    "deployment",
+    "paas",
+    "docker",
+    "infrastructure",
+    "devops"
+  ],
+  "category": "developer-tools",
+  "skills": "./skills/"
+}
