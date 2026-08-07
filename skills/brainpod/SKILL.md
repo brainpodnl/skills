@@ -91,13 +91,52 @@ how often you check in. It changes nothing else — not the gates, not what you
 verify before deploying, not the confirmations before a destructive operation.
 An experienced user gets terser narration, not a shorter path.
 
+## Talking to the user
+
+Shipping something is a good moment, and the narration should sound like it:
+warm, energetic, and plainly professional. Short sentences, everyday words, no
+em dashes, no hype. Confidence comes from the user always knowing where they
+are, not from exclamation marks.
+
+**Open with the plan, ahead of everything else including the calibration
+question**, so that question arrives as part of a plan rather than out of
+nowhere. In a few lines: what you are about to do, the checkpoints ahead (a
+working CLI, a signed-in session, then the workflow itself), and the one
+moment that needs them, which is approving the sign-in page in their browser.
+Someone who knows a browser tab is coming is never startled by one.
+
+**Say what each step is for as you start it, and what came back once it
+lands.** The gates read as bureaucracy when they arrive unexplained and as
+progress when they do not: `describe` is proving the binary works, `whoami` is
+checking the session, and both return in a moment.
+
+**Never let a slow command run in silence.** Say what it is doing and roughly
+how long it takes before you start it, then lead with the fact the user was
+waiting for once it finishes.
+
+- **Installing the CLI** is a download, a checksum check, and a move onto
+  `PATH`. Quick, and worth saying that the checksum is why you are not simply
+  running what you fetched.
+- **`login`** waits up to ten minutes on the user, not on the platform.
+  Nothing is stuck while that sits there, and saying so keeps them from
+  hunting for a problem that does not exist.
+- **`image build`** is the long one, and how long depends on the project's
+  toolchain and the network. Say that up front, then open the result with what
+  Railpack detected (provider, versions, start command) before the digest,
+  because that is the part the user can sanity check.
+- **`deploy --wait`** blocks until every resource reports healthy. Say that
+  the pod is coming up and that the wait ends by itself either way.
+
+Silence during any of these reads as a hang, and a user who believes the
+session hung will kill it mid-deploy.
+
 ## Onboarding is part of the job
 
 Assume the user has nothing set up and may not be a developer. Getting them to
 a working CLI and an authenticated session is your work, not theirs — do it
-inside the session rather than handing over a list of steps. Narrate what you
-are doing in plain language, and only ask the user to act when the step
-genuinely requires their consent or their credentials.
+inside the session rather than handing over a list of steps, and only ask the
+user to act when the step genuinely requires their consent or their
+credentials.
 
 Two gates, in order. Clear both before any other workflow.
 
@@ -199,12 +238,13 @@ never launched is only a warning to the CLI, which keeps waiting either way.
 
 - **Prefer an embedded browser pane** where the harness has one, so the sign-in
   happens in front of the user without a context switch. Tell them a sign-in
-  page is about to appear so it is not alarming. Loading a URL into a pane and
-  putting that pane in front of the user are usually **separate calls**: reach
-  for the one that opens or reveals the pane, because navigating a pane that is
-  already open can leave the sign-in rendered behind the transcript where nobody
-  sees it. If the harness also exposes a way to front a specific tab, do that
-  after navigating.
+  page is about to appear so it is not alarming.
+
+  **The pane has to end up in front of the user.** In some harnesses loading
+  the URL and fronting the pane are separate calls, so use whatever your
+  browser tooling offers to bring it forward, including when a pane is already
+  open, and confirm the sign-in page is what the user is actually looking at. A
+  navigation call that returned successfully is not evidence of either.
 - **Otherwise drop `--no-browser`** and let the CLI open their default browser,
   where their existing session and password manager are.
 
