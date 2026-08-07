@@ -125,10 +125,9 @@ derived from it — which means **pod creation must precede the image push**. If
 the user pointed you at an existing pod, use it, and treat Step 5's draft
 check as mandatory rather than a formality.
 
-The name is also the last thing the console URL was waiting on, so open that
-page now and leave it in front of the user (see `SKILL.md`). Everything from
-here is slow, and the page fills in on its own as the build and the deploy
-land.
+The name is also the last thing the pod's console URL was waiting on. Hold it
+until the build is done — `SKILL.md` says when to open it and why that is not
+here.
 
 ## Step 4: Build and push the image
 
@@ -176,6 +175,10 @@ merge the two streams or scrape the last brace from combined output.
 That stream is also where Railpack reports what it detected: provider,
 resolved package versions, step commands, start command. Check it against the
 project — a wrong provider builds and pushes cleanly, then fails at runtime.
+
+With the image built, open the pod's console page in its own tab and leave it
+in front of the user (see `SKILL.md`). Everything from here fills in on that
+page as you compose the resources and the deploy goes live.
 
 ## Step 5: Compose resources — validate before mutating
 

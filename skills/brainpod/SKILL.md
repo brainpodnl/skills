@@ -202,20 +202,27 @@ including when the pane is already open, and confirm the page is what the user
 is actually looking at. A navigation call that returned successfully is not
 evidence of either.
 
+**Every page gets its own tab, and the pages already open stay open.** Opening
+a second page is never a reason to give up the first: the console and the pod
+page are both live, and the user moves between them. Use whatever your browser
+tooling offers to open a new tab, and where it only navigates the current one,
+open the tab first and navigate that. The sign-in tab is the only one you ever
+close, and only once the callback has landed.
+
 **The pod console page is `<dashboard endpoint>/pods/<pod name>`**, on the same
 endpoint `login` uses: `BRAINPOD_DASHBOARD_ENDPOINT` where it is set, and
-`https://brainpod.io` otherwise. **Switch to it once the image is built and
+`https://brainpod.io` otherwise. **Bring it up once the image is built and
 before you compose the draft** — not when the pod is created, and not once the
 deploy has landed. Earlier and there is nothing on it to watch while the build
-runs, and it displaces the page that is reporting that build. Later and the
+runs, and it pulls attention off the page reporting that build. Later and the
 user is handed a finished result instead of seeing it happen: from this point
 the page fills in with the resources as you compose them and then the deploy
 going live, which is the part worth watching. Leave them there at the end, too;
 it is the one page that outlives the session.
 
-The session console keeps recording behind it, so switching costs the user
-nothing — its page is still on disk and still being written, and the steps you
-record after the switch are there when they go back to it.
+The session console keeps recording in its own tab meanwhile, so nothing is
+lost by looking at the pod page — and you keep it true either way, because the
+user can go back to it whenever they want.
 
 ## The session console
 
@@ -424,11 +431,11 @@ minute, ask the user whether the sign-in page is actually in front of them and
 re-surface the URL — do not sit out the ten-minute window waiting on a page that
 was never visible.
 
-**Once it lands, put the session console back.** The sign-in page has done its
-job and the user should not be left staring at it while the workflow carries on
-somewhere they cannot see. Close that tab where your browser tooling can, and
-bring the console forward again. Leaving the sign-in page in front is how a
-session ends up reporting progress to nobody.
+**Once it lands, put the session console back in front.** The sign-in page has
+done its job and the user should not be left staring at it while the workflow
+carries on somewhere they cannot see. This is the one tab you close, so close
+it where your browser tooling can, and front the console tab again. Leaving the
+sign-in page in front is how a session ends up reporting progress to nobody.
 
 Two constraints override the embedded browser here whatever the user chose,
 because they are about sign-in specifically. Neither bears on the console page,

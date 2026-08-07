@@ -2,7 +2,7 @@
   "name": "brainpod",
   "displayName": "BrainPod",
   "description": "Build it in Claude Code. Ship it in seconds. Deploy, operate, and debug applications on BrainPod with the brainpod CLI.",
-  "version": "1.13.1",
+  "version": "1.13.2",
   "author": {
     "name": "BrainPod",
     "url": "https://brainpod.io"
