@@ -58,10 +58,12 @@ check is not a result — you are accountable for what gets deployed, and a
 lossy report is a bad deploy.
 
 Keep for yourself both gates, anything on the consent boundary, every
-destructive operation, and the session console. A sub-agent must never be what
+destructive operation, and the console's steps. A sub-agent must never be what
 triggers an auth flow the user will read as their own, nor be handed a
-deletion or a redeploy. The console is one continuous session as the user sees
-it; steps arriving from several agents at once turn it into noise.
+deletion or a redeploy. The steps are one continuous account of the session as
+the user reads it, and several agents writing them at once turns that into
+noise. The console's output is the exception, and sub-agents should pipe into
+it freely — see below.
 
 Where the harness supports a task list, open one covering the workflow and
 keep it current as you go; a stale list is worse than none.
@@ -252,12 +254,19 @@ on a step that finished minutes ago. Marking a step started before you do the
 work also keeps the sign-in page honest, since it lists what is still to come
 and reads a step you have already begun as one of them.
 
-Where you run something long yourself that the CLI knows nothing about — a
-test suite, a migration, an install — pipe its output in as well, rather than
-leaving the panel empty through the one wait the user most wants to watch. It
-is a single stream in the order things happened, so name each source as you
-feed it and its lines are tagged with that name. Name them for what the user
-would call the thing, not the command that produced it.
+**Pipe in everything with a wait in it**, and err towards more rather than
+less: the test run, the migration, the install, the dependency fetch, the
+thing you are not sure is hanging. An empty panel through a long wait is the
+worst the console gets, and output nobody needed cost the user nothing to
+scroll past.
+
+The output is one stream in the order things happened, and every line is
+tagged with the source you fed it under, so more sources make it easier to
+follow rather than noisier. Name each for what the user would call the thing,
+not the command that produced it. **Sub-agents should pipe into it too** —
+unlike the steps, appends are per line and tagged, so several of them writing
+at once is what the tagging is for, and a sub-agent whose work is invisible is
+the reason a page sits still for minutes.
 
 **Always finish the session**, on success and on failure alike. An unfinished
 session is indistinguishable from an abandoned one, and after ninety seconds
