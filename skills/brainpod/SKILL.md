@@ -250,10 +250,14 @@ as it runs. Everything between them is yours.
 Record each step as you start it and again as it lands, so the page never sits
 on a step that finished minutes ago. Marking a step started before you do the
 work also keeps the sign-in page honest, since it lists what is still to come
-and reads a step you have already begun as one of them. Where you run
-something long yourself that the CLI knows nothing about — a test suite, a
-migration, an install — feed its output in too, rather than leaving the panel
-empty through the one wait the user most wants to watch.
+and reads a step you have already begun as one of them.
+
+Where you run something long yourself that the CLI knows nothing about — a
+test suite, a migration, an install — pipe its output in as well, rather than
+leaving the panel empty through the one wait the user most wants to watch. It
+is a single stream in the order things happened, so name each source as you
+feed it and its lines are tagged with that name. Name them for what the user
+would call the thing, not the command that produced it.
 
 **Always finish the session**, on success and on failure alike. An unfinished
 session is indistinguishable from an abandoned one, and after ninety seconds
