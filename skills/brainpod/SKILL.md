@@ -233,21 +233,28 @@ a time never tells them how much is left. Name the steps for the user, not for
 yourself: *Packaging your app*, not *image build*. Steps you did not plan for
 can still be recorded as they come up.
 
-**Which mechanism you use is decided by the browser, not by preference.** The
-page reads its session from a file beside it, and the two browsers fail in
-opposite directions:
+**How you open it is decided by the browser you have, not by preference.**
+There are two ways in: the `console.html` path `agent start` prints, and
+`brainpod agent serve`, which serves the same page over loopback and announces
+its URL on the first line of its output — run it in the background and take the
+URL from there. Every browser accepts one of the two and fails silently on the
+other, so this is not a preference and there is no safe default.
 
-- **Embedded browser** — open the `console.html` path `agent start` prints.
-  Loading it over loopback instead will not work: an embedded pane runs the
-  page but never shows it to the user.
-- **Default browser** — run `brainpod agent serve` in the background, take the
-  URL off its first line, and open that. Opening the file directly will not
-  work either: an ordinary browser shows the page but it stays empty forever,
-  because reading the session file next to it is blocked.
+| Where you are running | Open | Never |
+|---|---|---|
+| Claude Code | the `console.html` path | a served URL — the pane loads it but never shows it to the user |
+| Cursor | `agent serve`, then its URL | a `file://` path — the browser tool rejects local files outright |
+| A default browser | `agent serve`, then its URL | the file — it renders but stays empty, because reading the session beside it is blocked |
 
-Getting this backwards produces a page that looks fine to you and is blank or
-invisible to the user, and nothing reports an error. If you cannot tell which
-browser you have, you have the default one.
+In Cursor one navigate call both reveals the browser panel and focuses it, so
+there is no separate fronting step; elsewhere that is usually its own call.
+
+**Anywhere not in that table, treat it as unverified.** Start with `agent
+serve`, since a served page is what works in every ordinary browser, then
+confirm the user can actually see it and fall back to the file if they cannot.
+Confirming is the whole point: getting this backwards produces a page that
+looks correct from your side and is blank or was never shown on theirs, and no
+call returns an error to tell you.
 
 **The console is yours to keep true, and it is the one thing you never
 delegate.** It is the user's whole view of the session, so a page that has
