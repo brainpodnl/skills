@@ -206,8 +206,11 @@ evidence of either.
 a second page is never a reason to give up the first: the console and the pod
 page are both live, and the user moves between them. Use whatever your browser
 tooling offers to open a new tab, and where it only navigates the current one,
-open the tab first and navigate that. The sign-in tab is the only one you ever
-close, and only once the callback has landed.
+open the tab first and navigate that. **Name the tab you mean whenever the call
+lets you**, because the fallback is some notion of the last tab touched, and
+that is how a navigate lands on the page you were least willing to lose. The
+sign-in tab is the only one you ever close, and only once the callback has
+landed.
 
 **The pod console page is `<dashboard endpoint>/pods/<pod name>`**, on the same
 endpoint `login` uses: `BRAINPOD_DASHBOARD_ENDPOINT` where it is set, and
@@ -257,8 +260,10 @@ only place the file is the one that works:
 | Codex | `agent serve`, then its URL | a `file://` path — blocked the same way |
 | A default browser | `agent serve`, then its URL | the file — it renders but stays empty, because reading the session beside it is blocked |
 
-In Cursor one navigate call both reveals the browser panel and focuses it, so
-there is no separate fronting step; elsewhere that is usually its own call.
+In Cursor, revealing the panel is an argument on the navigate call rather than
+a call of its own, and leaving it off is the documented way to load a page
+*without* taking focus — so the call that opens the console succeeds either way
+and only one of the two puts it in front of anyone.
 
 **Anywhere not in that table, serve it.** That is what everything but Claude
 Code takes, so it is the better guess — then confirm the user can actually see
