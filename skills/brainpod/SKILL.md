@@ -34,17 +34,34 @@ configuration and teaches one project's conventions, not the contract.
 
 ## Running the work
 
-Where the harness offers sub-agents, delegate investigation of the project —
-runtime, build, ports, services, expected config — to one instead of reading
-the codebase yourself; do it inline only when sub-agents are unavailable.
-Demand concrete, checkable facts back: file paths, port numbers, the literal
-build command, the runtime version as the project declares it. "It's a Node
-app, should be fine" is not an answer — you are accountable for what gets
-deployed, and a lossy report is a bad deploy.
+Where the harness offers sub-agents, supervise rather than do. You hold the
+plan, the console, and the consent boundary; hand out the bounded fact-finding
+— what this project is, what a pod already runs, what a failing deployment is
+saying. Work inline only where sub-agents are unavailable.
 
-Keep both gates, anything on the consent boundary, and every destructive
-operation for yourself. A sub-agent must never be what triggers an auth flow
-the user will read as their own, nor be handed a deletion or a redeploy.
+**Give sub-agents medium reasoning effort where the harness exposes it.** What
+you delegate has a right answer and a checkable one, so more thinking buys
+nothing on "which port does this listen on" and costs the speed that made
+delegating worth it. Keep your own depth for the judgment calls: what to
+compose, what a failure means, what to tell the user.
+
+**Run independent questions at once; never overlapping mutations.** Reading the
+codebase and listing a pod's resources are one wait instead of two. Two
+sub-agents touching the same pod's draft is the one thing draft-then-promote
+cannot survive — they share a single mutable revision, and whoever deploys
+promotes both halves.
+
+**Demand concrete, checkable facts back**: file paths, port numbers, the
+literal build command, the runtime version as the project declares it. "It's a
+Node app, should be fine" is not an answer, and a claim you have no way to
+check is not a result — you are accountable for what gets deployed, and a
+lossy report is a bad deploy.
+
+Keep for yourself both gates, anything on the consent boundary, every
+destructive operation, and the session console. A sub-agent must never be what
+triggers an auth flow the user will read as their own, nor be handed a
+deletion or a redeploy. The console is one continuous session as the user sees
+it; steps arriving from several agents at once turn it into noise.
 
 Where the harness supports a task list, open one covering the workflow and
 keep it current as you go; a stale list is worse than none.
