@@ -260,6 +260,10 @@ thing you are not sure is hanging. An empty panel through a long wait is the
 worst the console gets, and output nobody needed cost the user nothing to
 scroll past.
 
+**Never pipe a `brainpod` command into it.** They write their own output
+already, so piping one puts every line in twice under the same name, which
+reads as a build stuck in a loop. Pipe the things `brainpod` does not run.
+
 The output is one stream in the order things happened, and every line is
 tagged with the source you fed it under, so more sources make it easier to
 follow rather than noisier. Name each for what the user would call the thing,
