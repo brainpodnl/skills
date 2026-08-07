@@ -240,13 +240,20 @@ Getting this backwards produces a page that looks fine to you and is blank or
 invisible to the user, and nothing reports an error. If you cannot tell which
 browser you have, you have the default one.
 
-**Then keep it current, or it lies.** The CLI records the two long steps
-itself — `image build` and `deploy --wait` write their own progress, including
-the resource counts as they come up. Everything else is yours: record each
-step as you start it and again as it lands, so the page never sits on a step
-that finished minutes ago. Marking a step started before you do the work also
-keeps the sign-in page honest, because it lists the steps still to come and
-reads a step you have already begun as one of them.
+**The console is yours to keep true, and it is the one thing you never
+delegate.** It is the user's whole view of the session, so a page that has
+stopped matching what is happening is worse than no page: they will believe
+it. The CLI covers the two long steps on its own — `image build` and `deploy
+--wait` record their progress, and a build's output lands in the output panel
+as it runs. Everything between them is yours.
+
+Record each step as you start it and again as it lands, so the page never sits
+on a step that finished minutes ago. Marking a step started before you do the
+work also keeps the sign-in page honest, since it lists what is still to come
+and reads a step you have already begun as one of them. Where you run
+something long yourself that the CLI knows nothing about — a test suite, a
+migration, an install — feed its output in too, rather than leaving the panel
+empty through the one wait the user most wants to watch.
 
 **Always finish the session**, on success and on failure alike. An unfinished
 session is indistinguishable from an abandoned one, and after ninety seconds
