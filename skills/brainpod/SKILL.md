@@ -192,15 +192,26 @@ the user once the callback lands. Run it in the background, take `url` off the
 first line, and treat the `authenticated` line as the success signal instead of
 polling `whoami`.
 
-Then open that `url`:
+Then open that `url` — but **print it in chat first, every time**. Every way of
+opening it can fail without telling you, and a URL the user can click is the one
+recovery that does not depend on you getting the next step right. A browser that
+never launched is only a warning to the CLI, which keeps waiting either way.
 
 - **Prefer an embedded browser pane** where the harness has one, so the sign-in
   happens in front of the user without a context switch. Tell them a sign-in
-  page is about to appear so it is not alarming.
+  page is about to appear so it is not alarming. Loading a URL into a pane and
+  putting that pane in front of the user are usually **separate calls**: reach
+  for the one that opens or reveals the pane, because navigating a pane that is
+  already open can leave the sign-in rendered behind the transcript where nobody
+  sees it. If the harness also exposes a way to front a specific tab, do that
+  after navigating.
 - **Otherwise drop `--no-browser`** and let the CLI open their default browser,
-  where their existing session and password manager are. Surface the announced
-  URL regardless — a browser that fails to launch is only a warning and the CLI
-  keeps waiting, so the URL is what makes that recoverable.
+  where their existing session and password manager are.
+
+Opening is not delivering. If the `authenticated` line has not landed within a
+minute, ask the user whether the sign-in page is actually in front of them and
+re-surface the URL — do not sit out the ten-minute window waiting on a page that
+was never visible.
 
 Two constraints decide whether the embedded route is even open to you:
 
