@@ -30,10 +30,9 @@ FOLLOW THESE INSTRUCTIONS RELIGIOUSLY. After every edit you make, come back to t
 
 ## Plugin Version Bumps
 
-The repo ships as a plugin to three agents, plus its own Claude Code marketplace. Each has a manifest with a `version` field:
+The repo ships as a plugin to three agents. Each has a manifest with a `version` field:
 
 - `.claude-plugin/plugin.json` (Claude Code)
-- `.claude-plugin/marketplace.json` (both `metadata.version` and the plugin entry's `version`)
 - `.codex-plugin/plugin.json` (Codex)
 - `.cursor-plugin/plugin.json` (Cursor)
 
@@ -55,7 +54,7 @@ If unsure whether a change warrants a bump, err on the side of bumping patch.
 
 ## Repository Layout
 
-Skills live at `skills/<name>/SKILL.md` in the repo root, with use-case references under `skills/<name>/references/`. This flat layout is what `npx skills add`, the Cursor plugin, and the Codex plugin all resolve against — the Claude Code marketplace entry uses `"source": "./"` to point at the same root. Moving a skill out of `skills/` breaks three of the four install paths at once, so don't.
+Skills live at `skills/<name>/SKILL.md` in the repo root, with use-case references under `skills/<name>/references/`. This flat layout is what `npx skills add`, the Cursor plugin, and the Codex plugin all resolve against. Moving a skill out of `skills/` breaks every install path at once, so don't.
 
 ## Reviewing Pull Requests
 
@@ -73,6 +72,6 @@ Then work through these specific checks:
 - **Routing is proportional and lives in exactly two places.** Require exactly one compact `## Use case specific references` entry per reference file plus its frontmatter `description`. Flag multiple `SKILL.md` bullets pointing to the same reference, redundant prose routing, and extra prominence given to a newly added workflow.
 - **Consent boundary intact.** Flag any change that has the agent completing a signup, accepting terms, minting a token, or pointing `login` at a non-default endpoint.
 - **Destructive-operation guardrails intact.** Flag the removal of warnings about retrying pod creation, redeploying to fix an unhealthy revision, deploying without inspecting the draft diff, or replacing a resource without reading it first.
-- **Version bumps in lockstep.** If published skill behavior changed, all four manifests must be bumped to the same version in the PR (and no bump for tooling/docs-only changes).
+- **Version bumps in lockstep.** If published skill behavior changed, all three manifests must be bumped to the same version in the PR (and no bump for tooling/docs-only changes).
 
 Prioritize correctness, and the read above, over pure formatting nits (whitespace, heading casing). "This line is meaningless to the reader" is never a mere nit. If the diff is clean against all of the above, say so plainly.

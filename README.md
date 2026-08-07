@@ -18,18 +18,6 @@ The skill routes to use-case references it loads on demand:
 
 Ask your agent to install it, or run one of the following yourself.
 
-### Claude Code
-
-Add this repository as a plugin marketplace, then install the plugin:
-
-```bash
-/plugin marketplace add brainpodnl/skills
-```
-
-```bash
-/plugin install brainpod@brainpod-skills
-```
-
 ### Cursor
 
 Install as a [Cursor plugin](https://cursor.com/docs/plugins):
