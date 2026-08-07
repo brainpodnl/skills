@@ -8,18 +8,5 @@
     "description": "Skills for working with BrainPod.",
     "version": "1.0.0"
   },
-  "plugins": [
-    {
-      "name": "brainpod-deploy",
-      "source": "./plugins/brainpod-deploy",
-      "description": "Deploy and verify applications on BrainPod with the brainpod CLI.",
-      "version": "1.0.0",
-      "category": "deployment",
-      "tags": [
-        "brainpod",
-        "deployment",
-        "docker"
-      ]
-    }
-  ]
+  "plugins": []
 }
