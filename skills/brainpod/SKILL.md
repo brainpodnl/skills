@@ -130,6 +130,32 @@ waiting for once it finishes.
 Silence during any of these reads as a hang, and a user who believes the
 session hung will kill it mid-deploy.
 
+## Putting a page in front of the user
+
+Two pages come up in a session: the sign-in URL from `login`, and the pod's
+console page. Both follow the same rules.
+
+**Print the URL in chat first, every time.** Every way of opening a page can
+fail without saying so, and a URL the user can click is the one recovery that
+does not depend on the next step working.
+
+**Prefer an embedded browser pane** where the harness has one, so the page
+arrives without a context switch, and say what is about to appear before it
+does. **The pane then has to end up in front of the user.** In some harnesses
+loading the URL and fronting the pane are separate calls, so use whatever your
+browser tooling offers to bring it forward, including when a pane is already
+open, and confirm the page is what the user is actually looking at. A
+navigation call that returned successfully is not evidence of either. Where
+there is no pane, open their default browser, which is where their session and
+password manager already are.
+
+**The pod console page is `<dashboard endpoint>/pods/<pod name>`**, on the same
+endpoint `login` uses: `BRAINPOD_DASHBOARD_ENDPOINT` where it is set, and
+`https://brainpod.io` otherwise. It follows the pod live, so open it as soon as
+the pod name exists and before you deploy. That turns the longest wait in the
+workflow into something the user can watch instead of something they sit
+through, and it leaves them somewhere to look after the session ends.
+
 ## Onboarding is part of the job
 
 Assume the user has nothing set up and may not be a developer. Getting them to
@@ -231,22 +257,11 @@ the user once the callback lands. Run it in the background, take `url` off the
 first line, and treat the `authenticated` line as the success signal instead of
 polling `whoami`.
 
-Then open that `url` — but **print it in chat first, every time**. Every way of
-opening it can fail without telling you, and a URL the user can click is the one
-recovery that does not depend on you getting the next step right. A browser that
-never launched is only a warning to the CLI, which keeps waiting either way.
-
-- **Prefer an embedded browser pane** where the harness has one, so the sign-in
-  happens in front of the user without a context switch. Tell them a sign-in
-  page is about to appear so it is not alarming.
-
-  **The pane has to end up in front of the user.** In some harnesses loading
-  the URL and fronting the pane are separate calls, so use whatever your
-  browser tooling offers to bring it forward, including when a pane is already
-  open, and confirm the sign-in page is what the user is actually looking at. A
-  navigation call that returned successfully is not evidence of either.
-- **Otherwise drop `--no-browser`** and let the CLI open their default browser,
-  where their existing session and password manager are.
+Then open that `url` by **Putting a page in front of the user** above. Nothing
+will tell you if it never appeared: a browser that failed to launch is only a
+warning to the CLI, which keeps waiting either way. Dropping `--no-browser`
+instead, and letting the CLI open the user's own default browser, is the better
+trade wherever no pane is available.
 
 Opening is not delivering. If the `authenticated` line has not landed within a
 minute, ask the user whether the sign-in page is actually in front of them and

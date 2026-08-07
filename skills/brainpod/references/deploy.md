@@ -125,6 +125,11 @@ derived from it — which means **pod creation must precede the image push**. If
 the user pointed you at an existing pod, use it, and treat Step 5's draft
 check as mandatory rather than a formality.
 
+The name is also the last thing the console URL was waiting on, so open that
+page now and leave it in front of the user (see `SKILL.md`). Everything from
+here is slow, and the page fills in on its own as the build and the deploy
+land.
+
 ## Step 4: Build and push the image
 
 `brainpod image build` builds by the path Step 2 settled and pushes to the
