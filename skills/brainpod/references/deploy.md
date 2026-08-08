@@ -131,6 +131,17 @@ here.
 
 ## Step 4: Build and push the image
 
+**Write a `.dockerignore` first, and write it for this project.** The whole
+working tree is copied into the image, and it is copied *over* what the build
+installed — so a `node_modules` or `.venv` from this machine replaces the one
+built for the cluster, and the build then fails on native binaries compiled for
+the wrong platform with nothing in the output naming the cause. Everything else
+lying around ships too: `.env` files, keys, dumps, local certificates. Read the
+tree and exclude what this project actually has — the dependency directories
+the build reinstalls, build output, and every file holding a secret. A
+`.gitignore` does not cover any of it; only `.dockerignore` is consulted, and
+its absence is silent both ways.
+
 `brainpod image build` builds by the path Step 2 settled and pushes to the
 pod's namespace under `registry.brainpod.io`. Docker login is not required;
 the CLI authenticates with the API token, which must allow `registry:push` for
