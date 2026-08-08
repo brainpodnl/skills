@@ -248,9 +248,9 @@ have; it serves the console over loopback and announces its URL on the first
 line of its output. Whether you *open* that URL is a separate decision, below —
 the server earns its place either way, because the sign-in page hands the user's
 tab to it once the callback lands. That matters most where you do not open it:
-in Claude Code the console is a local file, which the browser completing the
-sign-in cannot render, so without a server that user is left on a card frozen at
-the moment they signed in.
+in Claude Code the console the user is watching is a local file, and no page
+served over http can send a tab to one, so without a server there is nowhere to
+hand them and they are left on a card frozen at the moment they signed in.
 
 **Which of the two you open is decided by the browser you have, not by
 preference.** Every browser accepts one and fails silently on the other, so
