@@ -113,6 +113,11 @@ together. `operate.md` covers installing one.
 
 Pod creation is available to the agent — no dashboard step is needed.
 
+**Create it with the display name the user settled on** (**Calibrating to the
+user** in `SKILL.md`). Creation is the only point it can be set: the API exposes
+no rename, so a pod created without one is stuck being a generated name in a
+dashboard listing every other pod the user has.
+
 **Never retry a pod creation.** There is no idempotency key on this
 operation and pod names are server-generated, so a retry after a timeout
 or ambiguous failure silently creates a second pod. If a create fails
