@@ -243,30 +243,33 @@ a time never tells them how much is left. Name the steps for the user, not for
 yourself: *Packaging your app*, not *image build*. Steps you did not plan for
 can still be recorded as they come up.
 
-**How you open it is decided by the browser you have, not by preference.**
-There are two ways in: the `console.html` path `agent start` prints, and
-`brainpod agent serve`, which serves the same page over loopback and announces
-its URL on the first line of its output — run it in the background and take the
-URL from there. Every browser accepts one of the two and fails silently on the
-other, so this is not a preference and there is no safe default.
+**Always run `brainpod agent serve`** in the background, whatever browser you
+have; it serves the console over loopback and announces its URL on the first
+line of its output. Whether you *open* that URL is a separate decision, below —
+the server earns its place either way, because the sign-in page hands the user's
+tab to it once the callback lands. That matters most where you do not open it:
+in Claude Code the console is a local file, which the browser completing the
+sign-in cannot render, so without a server that user is left on a card frozen at
+the moment they signed in.
 
-Serving is the answer nearly everywhere. Claude Code is the exception, and the
-only place the file is the one that works:
+**Which of the two you open is decided by the browser you have, not by
+preference.** Every browser accepts one and fails silently on the other, so
+there is no safe default:
 
 | Where you are running | Open | Never |
 |---|---|---|
-| Claude Code | the `console.html` path | a served URL — the pane loads it but never shows it to the user |
-| Cursor | `agent serve`, then its URL | a `file://` path — the browser tool rejects local files outright |
-| Codex | `agent serve`, then its URL | a `file://` path — blocked the same way |
-| A default browser | `agent serve`, then its URL | the file — it renders but stays empty, because reading the session beside it is blocked |
+| Claude Code | the `console.html` path `agent start` prints | the served URL — the pane loads it but never shows it to the user |
+| Cursor | the served URL | a `file://` path — the browser tool rejects local files outright |
+| Codex | the served URL | a `file://` path — blocked the same way |
+| A default browser | the served URL | the file — it renders but stays empty, because reading the session beside it is blocked |
 
 In Cursor, revealing the panel is an argument on the navigate call rather than
 a call of its own, and leaving it off is the documented way to load a page
 *without* taking focus — so the call that opens the console succeeds either way
 and only one of the two puts it in front of anyone.
 
-**Anywhere not in that table, serve it.** That is what everything but Claude
-Code takes, so it is the better guess — then confirm the user can actually see
+**Anywhere not in that table, open the served URL.** That is what everything but
+Claude Code takes, so it is the better guess — then confirm the user can see
 the page, and fall back to the file if they cannot. Confirming is the whole
 point: getting this backwards produces a page that looks correct from your side
 and is blank or was never shown on theirs, and no call returns an error to tell
