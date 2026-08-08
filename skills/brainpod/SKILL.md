@@ -184,10 +184,6 @@ session hung will kill it mid-deploy.
 Three pages come up: the session console from `agent start`, the sign-in URL
 from `login`, and the pod's console page. The rules below hold for all three.
 
-**Print the URL or path in chat first, every time.** Every way of opening a page
-can fail without saying so, and something the user can click is the one recovery
-that does not depend on the next step working.
-
 **Open it where the user asked you to, and recommend the embedded browser.** Use
 it wherever the harness has one unless the user chose otherwise, including when
 the question was never asked. The default browser is the fallback and the right
@@ -211,6 +207,15 @@ lets you**, because the fallback is some notion of the last tab touched, and
 that is how a navigate lands on the page you were least willing to lose. The
 sign-in tab is the only one you ever close, and only once the callback has
 landed.
+
+**Then put the URL or path in chat, every time — after the attempt, never
+before.** Every way of opening a page can fail without saying so, and something
+the user can click is the one recovery that does not depend on the next step
+working, so it reaches chat even when the open errored, returned nothing you can
+read, or left you unable to confirm anything is visible; an open that hangs is a
+reason to print it and say so, not to withhold it. Printed first it becomes the
+invitation instead, and the page ends up open twice — once where you put it,
+once wherever the click landed.
 
 **The pod console page is `<dashboard endpoint>/pods/<pod name>`**, on the same
 endpoint `login` uses: `BRAINPOD_DASHBOARD_ENDPOINT` where it is set, and
@@ -428,11 +433,11 @@ carrying `url` and `expiresInSeconds` printed immediately, then an
 first line, and treat the `authenticated` line as the success signal instead of
 polling `whoami`.
 
-The `authorize` line is printed before any browser is touched either way, so put
-that `url` in chat, and where you are the one opening it, open it by **Putting a
-page in front of the user** above. Nothing will tell you if it never appeared: a
-browser that failed to launch is only a warning to the CLI, which keeps waiting
-either way.
+The `authorize` line is printed before any browser is touched either way. Where
+you are the one opening it, open it by **Putting a page in front of the user**
+above and put it in chat after; where the CLI opened it, put it in chat straight
+away. Nothing will tell you if it never appeared: a browser that failed to
+launch is only a warning to the CLI, which keeps waiting either way.
 
 Opening is not delivering. If the `authenticated` line has not landed within a
 minute, ask the user whether the sign-in page is actually in front of them and
