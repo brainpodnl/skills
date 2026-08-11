@@ -66,7 +66,7 @@ configuration and teaches one project's conventions, not the contract.
 
 ## Use case specific references
 
-- **[references/deploy.md](references/deploy.md)** — take an application from source to a running pod for the first time.
+- **[references/deploy.md](references/deploy.md)** — take an application from source to a running pod for the first time, or offer an example project to a user who wants to try BrainPod and has nothing to deploy.
 - **[references/operate.md](references/operate.md)** — change what an existing pod runs: resources, env, scale, databases, blueprints, and reverting a bad deploy.
 - **[references/debug.md](references/debug.md)** — diagnose a deployment that failed, timed out, is unhealthy, or is not serving traffic.
 

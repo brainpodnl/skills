@@ -1,5 +1,5 @@
 ---
-description: Take an application from source to a running pod for the first time — get a container runtime in place, create the pod, build and push the image, compose resources, promote the draft, and verify it is actually serving.
+description: Take an application from source to a running pod for the first time — get a container runtime in place, create the pod, build and push the image, compose resources, promote the draft, and verify it is actually serving. Also covers offering one of BrainPod's example projects when the user wants to try the platform and has nothing to deploy.
 metadata:
   required_access:
     - CODEBASE
@@ -9,8 +9,42 @@ metadata:
 
 # Deploying to BrainPod
 
-Clear both onboarding gates in `SKILL.md` first — a working binary and an
-authenticated session.
+When Step 0 applies, run it first; nothing in it needs the CLI, and the chosen
+project supplies the display name used by calibration. Then complete the
+mandatory preflight and both onboarding gates in `SKILL.md` before Step 1.
+
+## Step 0: When the user has nothing to deploy
+
+This applies only where the user named no project or directory **and** the
+working directory holds no source to build. Anything that looks like a project
+is theirs — an unfamiliar stack, a half-finished tree, something that will not
+build — and the answer there is to ask what they want deployed. Never clone
+over it, and never deploy an example nobody asked for: pod creation has no
+counterpart anywhere in the API, so a pod made on a guess outlives the session
+and nothing you can run takes it back.
+
+Offer instead, saying that it is an example and where it comes from. Both are
+BrainPod's own demos, MIT-licensed, and both deploy the same shape — a Next.js
+service on one replica with a managed Postgres and Valkey behind it:
+
+- **[brainpodnl/whiteboard](https://github.com/brainpodnl/whiteboard)** — a
+  shared whiteboard; two browser tabs draw on the same board.
+- **[brainpodnl/astroid](https://github.com/brainpodnl/astroid)** — a
+  multiplayer Asteroids arena; bots keep playing with nobody watching.
+
+Clone the one they pick into a new subdirectory and work from there, so a
+declined offer and a misread directory both leave things as you found them.
+Return to the mandatory preflight and calibration in `SKILL.md` after the clone:
+the project/display name offered to the user comes from the project, and until
+it exists there is nothing to derive one from.
+
+**Then read the clone's `AGENTS.md`, and let it stand in for Step 2.** Both
+carry one stating what that step would otherwise derive from source — the port
+and readiness path, the resource graph, the instance sizes that keep the deploy
+inside a trial account, and how each database's connection details reach the
+App. Every other step runs unchanged, and both trees already hold the
+`Dockerfile` and `.dockerignore` that Steps 2 and 4 would otherwise have you
+write.
 
 ## Step 1: Confirm a container runtime
 
