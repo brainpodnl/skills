@@ -132,9 +132,9 @@ Where the harness cannot ask, infer the experience answer from how the user
 phrased the request and assume the middle one. Either way, revise your read when
 the conversation contradicts it rather than holding the answer against the
 evidence. The browser answer is not something to infer: unasked or unanswered
-means the embedded browser wherever the harness has one, and the default
-browser everywhere else. Nor is the name: state the one you derived in a line
-and use it, which is what gives the user their say.
+means the default browser, and only a user who picked the embedded one gets it.
+Nor is the name: state the one you derived in a line and use it, which is what
+gives the user their say.
 
 The experience answer sets the register, and the distance between the ends of
 it is large:
@@ -201,19 +201,19 @@ session hung will kill it mid-deploy.
 Three pages come up: the session console from `agent start`, the sign-in URL
 from `login`, and the pod's console page. The rules below hold for all three.
 
-**Open it where the user asked you to, and recommend the embedded browser.** Use
-it wherever the harness has one unless the user chose otherwise, including when
-the question was never asked. The default browser is the fallback and the right
-call whenever they picked it, since that is where their logins and password
-manager already are.
+**Open it in the default browser unless the user picked the embedded one.**
+That is where their logins and password manager already are, and it is what an
+unasked or unanswered question leaves you with. Where the harness has an
+embedded browser it is the better place to watch a deploy, which is why the
+question above recommends it — but recommending is not choosing.
 
-**The embedded browser then has to end up in front of them**, or the advantage
-is gone and you have opened the page nowhere. Say what is about to appear
-before it does. In some harnesses loading the page and fronting the pane are
-separate calls, so use whatever your browser tooling offers to bring it forward,
-including when the pane is already open, and confirm the page is what the user
-is actually looking at. A navigation call that returned successfully is not
-evidence of either.
+**Where they did pick it, the embedded browser has to end up in front of them**,
+or the advantage is gone and you have opened the page nowhere. Say what is about
+to appear before it does. In some harnesses loading the page and fronting the
+pane are separate calls, so use whatever your browser tooling offers to bring it
+forward, including when the pane is already open, and confirm the page is what
+the user is actually looking at. A navigation call that returned successfully is
+not evidence of either.
 
 **Every page gets its own tab, and the pages already open stay open.** Opening
 a second page is never a reason to give up the first: the console and the pod
@@ -270,32 +270,33 @@ have; it serves the console over loopback and announces its URL on the first
 line of its output. Whether you *open* that URL is a separate decision, below —
 the server earns its place either way, because the sign-in page hands the user's
 tab to it once the callback lands. That matters most where you do not open it:
-in Claude Code the console the user is watching is a local file, and no page
-served over http can send a tab to one, so without a server there is nowhere to
-hand them and they are left on a card frozen at the moment they signed in.
+in Claude Code's embedded browser the console the user is watching is a local
+file, and no page served over http can send a tab to one, so without a server
+there is nowhere to hand them and they are left on a card frozen at the moment
+they signed in.
 
-**Which of the two you open is decided by the browser you have, not by
-preference.** Every browser accepts one and fails silently on the other, so
-there is no safe default:
+**Which of the two you open is decided by the browser you are opening it in,
+not by preference.** Every browser accepts one and fails silently on the other,
+so there is no safe default:
 
-| Where you are running | Open | Never |
+| Browser | Open | Never |
 |---|---|---|
-| Claude Code | the `console.html` path `agent start` prints | the served URL — the pane loads it but never shows it to the user |
-| Cursor | the served URL | a `file://` path — the browser tool rejects local files outright |
-| Codex | the served URL | a `file://` path — blocked the same way |
-| A default browser | the served URL | the file — it renders but stays empty, because reading the session beside it is blocked |
+| The default browser | the served URL | the file — it renders but stays empty, because reading the session beside it is blocked |
+| Claude Code's embedded browser | the `console.html` path `agent start` prints | the served URL — the pane loads it but never shows it to the user |
+| Cursor's embedded browser | the served URL | a `file://` path — the browser tool rejects local files outright |
+| Codex's embedded browser | the served URL | a `file://` path — blocked the same way |
 
 In Cursor, revealing the panel is an argument on the navigate call rather than
 a call of its own, and leaving it off is the documented way to load a page
 *without* taking focus — so the call that opens the console succeeds either way
 and only one of the two puts it in front of anyone.
 
-**Anywhere not in that table, open the served URL.** That is what everything but
-Claude Code takes, so it is the better guess — then confirm the user can see
-the page, and fall back to the file if they cannot. Confirming is the whole
-point: getting this backwards produces a page that looks correct from your side
-and is blank or was never shown on theirs, and no call returns an error to tell
-you.
+**In any other embedded browser, open the served URL.** That is what every one
+of them but Claude Code's takes, so it is the better guess — then confirm the
+user can see the page, and fall back to the file if they cannot. Confirming is
+the whole point: getting this backwards produces a page that looks correct from
+your side and is blank or was never shown on theirs, and no call returns an
+error to tell you.
 
 **The console is yours to keep true, and it is the one thing you never
 delegate.** It is the user's whole view of the session, so a page that has
@@ -438,17 +439,19 @@ with the token and the CLI stores it — the user never types or pastes one.
 Drive it yourself rather than letting it drive you:
 
 ```bash
-brainpod login --json --no-browser
+brainpod login --json
 ```
 
-`--no-browser` suppresses the CLI's own launch so you choose where the URL
-opens, which is what the embedded browser needs; drop it where the user picked
-the default browser or the harness has no embedded one, and the CLI opens the
-default browser itself. `--json` makes stdout NDJSON — an `authorize` line
-carrying `url` and `expiresInSeconds` printed immediately, then an
-`authenticated` line carrying the user once the callback lands. Run it in the background, take `url` off the
+`--json` makes stdout NDJSON — an `authorize` line carrying `url` and
+`expiresInSeconds` printed immediately, then an `authenticated` line carrying
+the user once the callback lands. Run it in the background, take `url` off the
 first line, and treat the `authenticated` line as the success signal instead of
 polling `whoami`.
+
+**Add `--no-browser` only where the user picked the embedded browser.** It
+suppresses the CLI's own launch so you choose where the URL opens, which is what
+opening it in the pane needs. Everywhere else leave it off and the CLI opens the
+default browser itself, which is the browser those users asked for.
 
 The `authorize` line is printed before any browser is touched either way. Where
 you are the one opening it, open it by **Putting a page in front of the user**
