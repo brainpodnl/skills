@@ -82,8 +82,9 @@ a returning user should never be asked twice. Otherwise ask them once, in a
 single prompt ahead of the gates, where the install and login narration is the
 first thing they change. Where the gates are already clear there is little
 narration left to calibrate, so drop the first question rather than opening a
-session by interviewing someone who just wants a deploy; the second still
-earns its place, because the pod page gets opened either way.
+session by interviewing someone who just wants a deploy; the third still
+earns its place, because the pod page gets opened either way. Drop the second
+wherever no pod is being created.
 
 Where the harness can put structured questions to the user, put them verbatim,
 phrased for the user rather than about them:
@@ -95,6 +96,12 @@ phrased for the user rather than about them:
 >   dashboard.
 > - **Yes, hands-on** — I've run my own servers or containers.
 
+> **What should this app be called in your dashboard?**
+>
+> - **`<name the project gives itself>`** — taken from your project's own
+>   config.
+> - **`<name of the folder it lives in>`** — the folder you're deploying from.
+
 > **Where should the deploy page and sign-in open?**
 >
 > - **Embedded browser** (recommended) — opens here in the conversation, so
@@ -104,20 +111,30 @@ phrased for the user rather than about them:
 
 The first asks what the user has done, not how technical they consider
 themselves; keep it that way, because self-assessment is unreliable in both
-directions. Ask the second only where the harness actually has an embedded
+directions. Ask the third only where the harness actually has an embedded
 browser to offer. Everywhere else there is nothing to choose, so do not stage a
 decision with one real answer.
 
-Record both where the harness has memory. They are facts about the user rather
-than about this project, so — unlike the deploy fact above — they are not
-contingent on anything succeeding, and they hold across projects and pods.
+The second offers a name rather than asking for one, so fill both options in
+before you ask: the name the project gives itself — `package.json`,
+`pyproject.toml`, `Cargo.toml`, the `go.mod` module path — and, where it
+differs, the basename of the directory being deployed, which is whichever one
+the user pointed at rather than the working directory. Whatever they type
+instead wins: it is cosmetic, and separate from the pod's own name, which the
+platform generates and every pod-scoped command takes.
+
+Record the first and the third where the harness has memory. They are facts
+about the user rather than about this project, so — unlike the deploy fact
+above — they are not contingent on anything succeeding, and they hold across
+projects and pods. The name belongs to one pod, so do not record it.
 
 Where the harness cannot ask, infer the experience answer from how the user
 phrased the request and assume the middle one. Either way, revise your read when
 the conversation contradicts it rather than holding the answer against the
 evidence. The browser answer is not something to infer: unasked or unanswered
 means the embedded browser wherever the harness has one, and the default
-browser everywhere else.
+browser everywhere else. Nor is the name: state the one you derived in a line
+and use it, which is what gives the user their say.
 
 The experience answer sets the register, and the distance between the ends of
 it is large:
@@ -184,10 +201,6 @@ session hung will kill it mid-deploy.
 Three pages come up: the session console from `agent start`, the sign-in URL
 from `login`, and the pod's console page. The rules below hold for all three.
 
-**Print the URL or path in chat first, every time.** Every way of opening a page
-can fail without saying so, and something the user can click is the one recovery
-that does not depend on the next step working.
-
 **Open it where the user asked you to, and recommend the embedded browser.** Use
 it wherever the harness has one unless the user chose otherwise, including when
 the question was never asked. The default browser is the fallback and the right
@@ -211,6 +224,15 @@ lets you**, because the fallback is some notion of the last tab touched, and
 that is how a navigate lands on the page you were least willing to lose. The
 sign-in tab is the only one you ever close, and only once the callback has
 landed.
+
+**Then put the URL or path in chat, every time — after the attempt, never
+before.** Every way of opening a page can fail without saying so, and something
+the user can click is the one recovery that does not depend on the next step
+working, so it reaches chat even when the open errored, returned nothing you can
+read, or left you unable to confirm anything is visible; an open that hangs is a
+reason to print it and say so, not to withhold it. Printed first it becomes the
+invitation instead, and the page ends up open twice — once where you put it,
+once wherever the click landed.
 
 **The pod console page is `<dashboard endpoint>/pods/<pod name>`**, on the same
 endpoint `login` uses: `BRAINPOD_DASHBOARD_ENDPOINT` where it is set, and
@@ -428,11 +450,11 @@ carrying `url` and `expiresInSeconds` printed immediately, then an
 first line, and treat the `authenticated` line as the success signal instead of
 polling `whoami`.
 
-The `authorize` line is printed before any browser is touched either way, so put
-that `url` in chat, and where you are the one opening it, open it by **Putting a
-page in front of the user** above. Nothing will tell you if it never appeared: a
-browser that failed to launch is only a warning to the CLI, which keeps waiting
-either way.
+The `authorize` line is printed before any browser is touched either way. Where
+you are the one opening it, open it by **Putting a page in front of the user**
+above and put it in chat after; where the CLI opened it, put it in chat straight
+away. Nothing will tell you if it never appeared: a browser that failed to
+launch is only a warning to the CLI, which keeps waiting either way.
 
 Opening is not delivering. If the `authenticated` line has not landed within a
 minute, ask the user whether the sign-in page is actually in front of them and
