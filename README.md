@@ -1,18 +1,31 @@
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset=".github/hero-dark.gif">
+  <img src=".github/hero.gif" alt="BrainPod — build it in Claude, Cursor or Codex, host it in Europe" width="900">
+</picture>
+
 # BrainPod Skills
 
 [Agent Skills](https://github.com/anthropics/skills) that teach AI coding assistants (Claude Code, Cursor, Codex) how to deploy, operate, and debug applications on [BrainPod](https://brainpod.io) using the `brainpod` CLI.
 
-## Skills
+## The skill
 
-| Skill                             | Description                                                                                                                                                 |
-| --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [brainpod](./skills/brainpod)     | Main skill for working with BrainPod. Create pods, build and push container images, compose resources, promote draft revisions, change what a running pod runs, and diagnose unhealthy deployments. |
+[`skills/brainpod`](./skills/brainpod) covers the whole lifecycle: creating pods, building and pushing container images, composing resources, promoting draft revisions, changing what a running pod runs, and diagnosing unhealthy deployments.
 
-The skill routes to use-case references it loads on demand:
+It routes to use-case references it loads on demand:
 
 - [`references/deploy.md`](./skills/brainpod/references/deploy.md) — take an application from source to a running pod for the first time.
 - [`references/operate.md`](./skills/brainpod/references/operate.md) — change what an existing pod runs: resources, env, scale, databases, blueprints, and reverting a bad deploy.
 - [`references/debug.md`](./skills/brainpod/references/debug.md) — diagnose a deployment that failed, timed out, is unhealthy, or is not serving traffic.
+
+## Quick start
+
+Open your coding agent in the project you want to ship and paste:
+
+```
+Install the BrainPod skill from github.com/brainpodnl/skills and use it to deploy this project to BrainPod.
+
+Sign me up, work out what the project needs, and hand me the live URL when it's up.
+```
 
 ## Installation
 
