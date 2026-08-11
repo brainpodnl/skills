@@ -113,10 +113,11 @@ together. `operate.md` covers installing one.
 
 Pod creation is available to the agent — no dashboard step is needed.
 
-**Create it with the display name the user settled on** (**Calibrating to the
-user** in `SKILL.md`). Creation is the only point it can be set: the API exposes
-no rename, so a pod created without one is stuck being a generated name in a
-dashboard listing every other pod the user has.
+**After stating that the identifier is generated, create the pod with the
+project/display name settled under Naming in `SKILL.md`.** Creation is the only
+point it can be set: the API exposes no rename, so a pod created without one is
+stuck being a generated name in a dashboard listing every other pod the user
+has.
 
 **Never retry a pod creation.** There is no idempotency key on this
 operation and pod names are server-generated, so a retry after a timeout
@@ -130,11 +131,14 @@ derived from it — which means **pod creation must precede the image push**. If
 the user pointed you at an existing pod, use it, and treat Step 5's draft
 check as mandatory rather than a formality.
 
-The name is also the last thing the pod's console URL was waiting on. Hold it
-until the build is done — `SKILL.md` says when to open it and why that is not
-here.
+The identifier is also the last thing the pod dashboard URL was waiting on.
+Print it, open it in a separate foreground tab, verify the page, and record
+`dashboardOpened: true` before continuing.
 
 ## Step 4: Build and push the image
+
+Stop before building unless the mandatory pre-build checklist in `SKILL.md` is
+complete: browser preference, console, identity, and pod dashboard.
 
 **Write a `.dockerignore` first, and write it for this project.** The whole
 working tree is copied into the image, and it is copied *over* what the build
@@ -191,10 +195,6 @@ merge the two streams or scrape the last brace from combined output.
 That stream is also where Railpack reports what it detected: provider,
 resolved package versions, step commands, start command. Check it against the
 project — a wrong provider builds and pushes cleanly, then fails at runtime.
-
-With the image built, open the pod's console page in its own tab and leave it
-in front of the user (see `SKILL.md`). Everything from here fills in on that
-page as you compose the resources and the deploy goes live.
 
 ## Step 5: Compose resources — validate before mutating
 

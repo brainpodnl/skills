@@ -6,6 +6,44 @@ compatibility: Requires the `brainpod` CLI on PATH and authentication from `brai
 
 # Working with BrainPod
 
+## Mandatory deployment preflight
+
+Before `brainpod login`, pod creation, or any deployment mutation, keep this
+evidence in the task list or a compact session note:
+
+```text
+browserPreference: embedded | default
+browserControl: <loaded skill/tool> | unavailable
+consoleOpened: true | false
+identityConfirmed: <account> | false
+dashboardOpened: true | false
+```
+
+Resolve it before Gate 1. In Codex, an embedded browser exists only when
+`browser:control-in-app-browser` is listed: load that skill completely and use
+the Node `js` tool it names. In another harness, record the specific browser
+skill or tool actually loaded, never “browser tooling.” If an embedded browser
+exists, ask the exact browser question under **Calibrating to the user**. With
+no structured questions, ask it directly in plain text and wait; with no
+interactive answer possible, record `embedded`. With no embedded browser,
+record `default`. **Do not proceed while the preference is unresolved.**
+
+Before `login`, require a foregrounded, browser-verified console and then set
+`consoleOpened: true`. Before pod creation or any deployment mutation, record
+the account from `whoami` or the `authenticated` login event. **Do not create a
+pod until browser preference, browser control, console, and identity are all
+resolved.** Before an image build, require all four checks below;
+`dashboardOpened` becomes `true` only after its page is printed, opened in a
+separate foreground tab, and verified.
+
+```text
+[ ] browser preference recorded  [ ] console opened
+[ ] identity confirmed            [ ] pod dashboard ready
+```
+
+Printing a URL never clears a page checkpoint. Keep the console and pod
+dashboard tabs open throughout.
+
 BrainPod is **draft-then-promote**, not imperative. Resource mutations and
 blueprint installs accumulate in a mutable draft revision; `deploy` promotes
 that draft. Every workflow below inherits that model, and the interesting
@@ -115,26 +153,33 @@ directions. Ask the third only where the harness actually has an embedded
 browser to offer. Everywhere else there is nothing to choose, so do not stage a
 decision with one real answer.
 
-The second offers a name rather than asking for one, so fill both options in
-before you ask: the name the project gives itself — `package.json`,
-`pyproject.toml`, `Cargo.toml`, the `go.mod` module path — and, where it
-differs, the basename of the directory being deployed, which is whichever one
-the user pointed at rather than the working directory. Whatever they type
-instead wins: it is cosmetic, and separate from the pod's own name, which the
-platform generates and every pod-scoped command takes.
+### Naming
+
+The second offers a project/display name rather than a pod identifier. Fill
+both options in before asking: the name the project gives itself —
+`package.json`, `pyproject.toml`, `Cargo.toml`, the `go.mod` module path — and,
+where it differs, the basename of the directory the user pointed at. Whatever
+they type instead wins. Before creation say: **“BrainPod generates the pod
+identifier. I'll use `<derived-name>` as the project/display name.”**
+
+Keep the three kinds of name separate:
+
+- **Pod identifier:** always server-generated; never ask the user for it.
+- **Project/display name:** ask once because BrainPod supports setting it at
+  creation; if no answer is possible, derive it, state it, and continue.
+- **Image and resource names:** derive them from repository metadata unless the
+  user specifies them.
 
 Record the first and the third where the harness has memory. They are facts
 about the user rather than about this project, so — unlike the deploy fact
 above — they are not contingent on anything succeeding, and they hold across
 projects and pods. The name belongs to one pod, so do not record it.
 
-Where the harness cannot ask, infer the experience answer from how the user
-phrased the request and assume the middle one. Either way, revise your read when
-the conversation contradicts it rather than holding the answer against the
-evidence. The browser answer is not something to infer: unasked or unanswered
-means the default browser, and only a user who picked the embedded one gets it.
-Nor is the name: state the one you derived in a line and use it, which is what
-gives the user their say.
+Where no interactive answer is possible, infer the experience answer from how
+the user phrased the request and assume the middle one. Either way, revise your
+read when the conversation contradicts it. The browser answer is never inferred:
+use the preflight fallback and record it. Nor is the project/display name:
+state the derived value and use it.
 
 The experience answer sets the register, and the distance between the ends of
 it is large:
@@ -201,11 +246,10 @@ session hung will kill it mid-deploy.
 Three pages come up: the session console from `agent start`, the sign-in URL
 from `login`, and the pod's console page. The rules below hold for all three.
 
-**Open it in the default browser unless the user picked the embedded one.**
-That is where their logins and password manager already are, and it is what an
-unasked or unanswered question leaves you with. Where the harness has an
-embedded browser it is the better place to watch a deploy, which is why the
-question above recommends it — but recommending is not choosing.
+**Open it in the browser recorded by the mandatory preflight.** An unanswered
+question where no interaction is possible resolves to the embedded browser;
+where no embedded browser exists, the only valid recorded choice is the default
+browser.
 
 **Where they did pick it, the embedded browser has to end up in front of them**,
 or the advantage is gone and you have opened the page nowhere. Say what is about
@@ -215,14 +259,13 @@ forward, including when the pane is already open, and confirm the page is what
 the user is actually looking at. A navigation call that returned successfully is
 not evidence of either.
 
-**Where the panel refuses, fall back to their own browser.** Some embedded
+**Where the panel refuses, resolve a new preference before switching.** Some embedded
 browsers gate the first page on an origin behind a prompt only the user can
 accept, and a returning user meets it for the first time on the pod page, long
 after they stopped watching. That prompt governs what *you* may load, so forcing
-the panel past it is the one thing not to do; the browser this skill otherwise
-defaults to puts nothing in your context. Say you are switching, and pass the
-opener only a URL you built yourself, never one that arrived in content you
-read.
+the panel past it is the one thing not to do. Ask to switch to the default
+browser, record the answer, and stop if it remains unresolved. Pass the opener
+only a URL you built yourself, never one that arrived in content you read.
 
 **Every page gets its own tab, and the pages already open stay open.** Opening
 a second page is never a reason to give up the first: the console and the pod
@@ -234,29 +277,49 @@ that is how a navigate lands on the page you were least willing to lose. The
 sign-in tab is the only one you ever close, and only once the callback has
 landed.
 
-**Then put the URL or path in chat, every time — after the attempt, never
-before.** Every way of opening a page can fail without saying so, and something
-the user can click is the one recovery that does not depend on the next step
-working, so it reaches chat even when the open errored, returned nothing you can
-read, or left you unable to confirm anything is visible; an open that hangs is a
-reason to print it and say so, not to withhold it. Printed first it becomes the
-invitation instead, and the page ends up open twice — once where you put it,
-once wherever the click landed.
+**Put the clickable URL or path in chat first, every time. Then open it in a new
+tab, bring that exact tab to the foreground, and inspect browser state for the
+expected URL and page marker.** A successful navigation call is not enough,
+and printing the URL is not a substitute for opening it. If any postcondition
+cannot be verified, report which one failed and do not clear its checkpoint.
 
 **The pod console page is `<dashboard endpoint>/pods/<pod name>`**, on the same
 endpoint `login` uses: `BRAINPOD_DASHBOARD_ENDPOINT` where it is set, and
-`https://brainpod.io` otherwise. **Bring it up once the image is built and
-before you compose the draft** — not when the pod is created, and not once the
-deploy has landed. Earlier and there is nothing on it to watch while the build
-runs, and it pulls attention off the page reporting that build. Later and the
-user is handed a finished result instead of seeing it happen: from this point
-the page fills in with the resources as you compose them and then the deploy
-going live, which is the part worth watching. Leave them there at the end, too;
-it is the one page that outlives the session.
+`https://brainpod.io` otherwise. **Bring it up immediately after pod creation
+and before the image build.** This is the final pre-build checkpoint, and it
+leaves the user with a verified page that fills in as resources are composed
+and the deploy goes live. Leave it open at the end; it is the one page that
+outlives the session.
 
 The session console keeps recording in its own tab meanwhile, so nothing is
 lost by looking at the pod page — and you keep it true either way, because the
 user can go back to it whenever they want.
+
+### Codex worked example
+
+Load `browser:control-in-app-browser`, select the recorded browser exactly as
+that skill directs, and read its browser documentation. For each trusted URL
+the agent constructed itself, the observable sequence is:
+
+```js
+const page = await browser.tabs.new();
+await page.goto(url);
+await (await browser.capabilities.get("visibility")).set(true);
+
+const selected = await browser.tabs.selected();
+const loadedUrl = await page.url();
+const marker = await page.playwright.getByRole("heading", {
+  name: expectedHeading,
+}).innerText();
+
+// Clear the checkpoint only when selected.id === page.id,
+// loadedUrl is the expected URL, and marker identifies the expected page.
+```
+
+This creates rather than reuses a tab, navigates it, fronts the in-app browser,
+and checks both selection and content. Keep the console and pod tabs throughout
+the workflow and preserve both as deliverables at final tab cleanup; close only
+the completed sign-in tab.
 
 ## The session console
 
@@ -448,7 +511,7 @@ with the token and the CLI stores it — the user never types or pastes one.
 Drive it yourself rather than letting it drive you:
 
 ```bash
-brainpod login --json
+brainpod login --json --no-browser
 ```
 
 `--json` makes stdout NDJSON — an `authorize` line carrying `url` and
@@ -457,16 +520,16 @@ the user once the callback lands. Run it in the background, take `url` off the
 first line, and treat the `authenticated` line as the success signal instead of
 polling `whoami`.
 
-**Add `--no-browser` only where the user picked the embedded browser.** It
-suppresses the CLI's own launch so you choose where the URL opens, which is what
-opening it in the pane needs. Everywhere else leave it off and the CLI opens the
-default browser itself, which is the browser those users asked for.
+`--no-browser` suppresses the CLI's own unobservable launch. The mandatory URL
+handler owns the authorization URL so it can create a new tab in the recorded
+browser, foreground it, and verify the page. If the selected browser cannot be
+controlled or cannot reach this machine's loopback, stop this flow and use the
+token path below; do not fall back to an unverifiable launch.
 
-The `authorize` line is printed before any browser is touched either way. Where
-you are the one opening it, open it by **Putting a page in front of the user**
-above and put it in chat after; where the CLI opened it, put it in chat straight
-away. Nothing will tell you if it never appeared: a browser that failed to
-launch is only a warning to the CLI, which keeps waiting either way.
+The `authorize` line is printed before any browser is touched. Put its URL in
+chat, then open and verify it by **Putting a page in front of the user** above.
+Nothing in the login process proves that the page appeared; only browser state
+does.
 
 Opening is not delivering. If the `authenticated` line has not landed within a
 minute, ask the user whether the sign-in page is actually in front of them and
