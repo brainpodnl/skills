@@ -88,7 +88,7 @@ error text rarely names the real cause:
 | `exec format error` or instant crash loop | Architecture mismatch — compare the build's `platform` against `cluster list` |
 | Permission denied writing a path | Path not writable by the runtime uid; prefer `App.spec.runtime.fsGroup` over a chown init step |
 | Deployed and healthy, but requests 404 or hang | `Route.rules[].backendRef` points at the wrong App, or the Route port does not match the image's `exposedPorts` |
-| Healthy app, database connection refused | `App.spec.env` holds a stale or invented connection value — the resource API publishes no exports or interpolation, so every value is literal |
+| Healthy app, database connection refused | `App.spec.env` holds a literal connection string, or a `${<name>.<field>}` reference naming a resource that does not exist. Check the referenced name against `resource list` — a bad reference passes `--dry-run` and fails only at runtime |
 
 Cross-check the image against the resource that references it:
 

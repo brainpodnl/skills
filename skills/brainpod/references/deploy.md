@@ -237,21 +237,43 @@ batch. Namespace is always `default`. Contract details worth pinning:
   creation. Report that returned value rather than inventing one.
 - Cross-resource references are URNs — an App's `mounts[].disk`, a database's
   `diskRef`, and a Route's `rules[].backendRef` take
-  `urn:brain:<kind>:default:<name>`. Because names are in the batch, compose
-  those references before sending it.
+  `urn:brain:<kind>:default:<name>`, where `<kind>` is **lowercase**:
+  `urn:brain:disk:default:pg-disk`, never `urn:brain:Disk:default:pg-disk`. The
+  same kind is written both ways in one workflow — PascalCase as a manifest's
+  own `kind` field (`"kind": "Disk"`), lowercase in a URN and as the argument to
+  `resource get`. Because names are in the batch, compose those references
+  before sending it.
 - `App.spec.env` is required even when empty.
 - Instance-size enums differ per kind, so read each kind's own rather than
   reusing the App value, and take a database's `version` enum from its schema
   rather than assuming a supported release.
+- **Instance size gates `App.spec.replicas`, and no schema says so.** `.5x`
+  rejects any value above 1 with `VALIDATION_ERROR` "Only 1 replica is allowed
+  for this instance"; `1x` is the smallest that accepts more. Choose the
+  instance from the replica count the app needs, rather than sizing first and
+  discovering the ceiling at validation. The `details[].path` is `replicas`
+  rather than `limits.`, so this arrives looking like a bad manifest instead of
+  a sizing decision.
 
 ### Runtime values and disk permissions
 
 `App.spec.env` is a flat array of `{ name, value }`, and every `value` must be
-a non-empty string. The resource API exposes no exports or interpolation
-contract, so do not generate `${resource.field}` references or claim that
-created resources publish credentials. Only use substitution syntax when a
-selected blueprint's own documentation explicitly defines it; otherwise use
-concrete values supplied through a documented input.
+a non-empty string.
+
+**Database resources publish their connection details, and an App's env values
+reach them by reference**: `${<resource-name>.<field>}`, so a `Postgres` named
+`postgres` supplies its connection string as `${postgres.uri}`. Use that rather
+than a literal, because for a managed database there is no literal to use — a
+provisioned `Postgres` returns only `healthy`, `status`, and `urn` from
+`resource get`, and no CLI command anywhere prints its credentials. Even where a
+concrete value is obtainable, the reference is the better choice: a literal
+password would be stored in the revision.
+
+`resource create --dry-run` cannot check any of this. It validates shape only
+and accepts any non-empty string, including a reference to a resource that does
+not exist, so a substitution mistake surfaces at runtime rather than at
+validation. Do not treat a passing dry-run as evidence that a reference
+resolves.
 
 For a mounted disk that is not writable by the runtime user, prefer
 `App.spec.runtime.fsGroup`; `runtime` also provides `uid` and `gid`. A chown
