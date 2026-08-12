@@ -69,9 +69,12 @@ Common changes and where they live — confirm each against
 - **New image** — build and push first (see `deploy.md`), then replace
   `App.spec.image` with the digest-pinned `reference` from the build response.
 - **Attaching a database** — run `brainpod describe resource` to see which
-  database kinds this CLI version offers. Every one requires a `diskRef`, so
+  database kinds this CLI version offers, and the chosen kind's `variables` for
+  what its connection details are called. Every one requires a `diskRef`, so
   create the `Disk` and the database in one `resource create` batch,
-  referencing the disk as `urn:brain:disk:default:<name>`.
+  referencing the disk as `urn:brain:disk:default:<name>`. Wiring the App to it
+  is a `replace` on `App.spec.env` carrying `${<name>.uri}`, which gets no
+  dry-run — read `resource variables` back before deploying.
 
 ## Installing a blueprint
 
