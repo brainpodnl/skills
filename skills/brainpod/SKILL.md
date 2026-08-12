@@ -59,9 +59,10 @@ brainpod describe resource <kind> --json
 ```
 
 The bare form lists the kinds this CLI supports; the kind form is
-authoritative for its fields and value constraints. Neither needs
-authentication. Read the schema of every kind you compose, and never
-substitute reading another pod's resources — that exposes unrelated
+authoritative for its fields, its value constraints, and the variables it
+exports for other resources to reference. Neither needs authentication.
+Read the schema of every kind you compose, and never substitute reading
+another pod's resources — that exposes unrelated
 configuration and teaches one project's conventions, not the contract.
 
 ## Use case specific references
