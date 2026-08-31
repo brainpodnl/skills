@@ -69,7 +69,7 @@ For reference, what it sets up on your behalf:
 
 **A signed-in session.** The agent runs `brainpod login` and opens the sign-in page for you — in an embedded browser pane where its harness has one, otherwise in your default browser. You approve there and the CLI stores the token itself, so there is no token to copy and paste. Starting the flow is the agent's part; approving it is yours.
 
-On a headless machine, in a container, or in CI, the browser flow isn't available, so create an API token in the [BrainPod dashboard](https://brainpod.io) and set it instead:
+On a headless machine, in a container, or in CI, the browser flow isn't available, so create an API token in the [BrainPod console](https://console.brainpod.io) and set it instead:
 
 ```bash
 export BRAINPOD_API_TOKEN=brain_...

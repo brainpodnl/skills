@@ -285,11 +285,11 @@ cannot be verified, report which one failed and do not clear its checkpoint.
 
 **The pod console page is `<dashboard endpoint>/pods/<pod name>`**, on the same
 endpoint `login` uses: `BRAINPOD_DASHBOARD_ENDPOINT` where it is set, and
-`https://brainpod.io` otherwise. **Bring it up immediately after pod creation
-and before the image build.** This is the final pre-build checkpoint, and it
-leaves the user with a verified page that fills in as resources are composed
-and the deploy goes live. Leave it open at the end; it is the one page that
-outlives the session.
+`https://console.brainpod.io` otherwise. **Bring it up immediately after pod
+creation and before the image build.** This is the final pre-build
+checkpoint, and it leaves the user with a verified page that fills in as
+resources are composed and the deploy goes live. Leave it open at the end; it
+is the one page that outlives the session.
 
 The session console keeps recording in its own tab meanwhile, so nothing is
 lost by looking at the pod page — and you keep it true either way, because the
