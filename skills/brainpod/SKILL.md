@@ -214,14 +214,14 @@ landed.
 
 **The pod console page is `<dashboard endpoint>/pods/<pod name>`**, on the same
 endpoint `login` uses: `BRAINPOD_DASHBOARD_ENDPOINT` where it is set, and
-`https://brainpod.io` otherwise. **Bring it up once the image is built and
-before you compose the draft** — not when the pod is created, and not once the
-deploy has landed. Earlier and there is nothing on it to watch while the build
-runs, and it pulls attention off the page reporting that build. Later and the
-user is handed a finished result instead of seeing it happen: from this point
-the page fills in with the resources as you compose them and then the deploy
-going live, which is the part worth watching. Leave them there at the end, too;
-it is the one page that outlives the session.
+`https://console.brainpod.io` otherwise. **Bring it up once the image is
+built and before you compose the draft** — not when the pod is created, and
+not once the deploy has landed. Earlier and there is nothing on it to watch
+while the build runs, and it pulls attention off the page reporting that
+build. Later and the user is handed a finished result instead of seeing it
+happen: from this point the page fills in with the resources as you compose
+them and then the deploy going live, which is the part worth watching. Leave
+them there at the end, too; it is the one page that outlives the session.
 
 The session console keeps recording in its own tab meanwhile, so nothing is
 lost by looking at the pod page — and you keep it true either way, because the
