@@ -260,20 +260,35 @@ batch. Namespace is always `default`. Contract details worth pinning:
 `App.spec.env` is a flat array of `{ name, value }`, and every `value` must be
 a non-empty string.
 
-**Database resources publish their connection details, and an App's env values
-reach them by reference**: `${<resource-name>.<field>}`, so a `Postgres` named
-`postgres` supplies its connection string as `${postgres.uri}`. Use that rather
-than a literal, because for a managed database there is no literal to use — a
-provisioned `Postgres` returns only `healthy`, `status`, and `urn` from
-`resource get`, and no CLI command anywhere prints its credentials. Even where a
-concrete value is obtainable, the reference is the better choice: a literal
-password would be stored in the revision.
+**Resources publish variables, and an App's env values reach them by
+reference**: `${<resource-name>.<field>}`, so a `Postgres` named `postgres`
+supplies its connection string as `${postgres.uri}`.
 
-`resource create --dry-run` cannot check any of this. It validates shape only
-and accepts any non-empty string, including a reference to a resource that does
-not exist, so a substitution mistake surfaces at runtime rather than at
-validation. Do not treat a passing dry-run as evidence that a reference
-resolves.
+**Read what a kind exports before composing anything.** `brainpod describe
+resource <kind>` returns `variables` alongside `schema`: every field that kind
+exports, whether it is secret, and the template behind a templated one. Like the
+rest of `describe` it needs no pod, no API token and no network — with the
+network down it answers from the CLI's embedded snapshot. So the App's env can
+be written correctly before either resource exists, rather than corrected after
+a runtime failure.
+
+After creation, `brainpod --pod <pod> resource variables` prints what actually
+resolved, one copy-pasteable `REF` per row; add `<kind> <name>` to scope it to
+one resource. `<unresolved>` there means the variable exists but its source has
+no value yet — a different answer from `<secret>`.
+
+**Secret values are never returned, by any command or endpoint.** A database
+password is generated inside the cluster and never reaches the API, so
+`<secret>` is the whole truth rather than a redaction over something the CLI is
+holding back. That is why `${postgres.uri}` is not merely preferable to a
+literal — there is no literal to obtain. It stays the better choice wherever a
+value *is* obtainable, since a literal password would be stored in the revision.
+
+`resource create --dry-run` resolves every reference in `App.spec.env` against
+the draft and returns `VALIDATION_ERROR` with `details[].path` at the offending
+entry when one names a resource or a variable that does not exist. It still
+proves nothing past shape and resolvability: a batch that dry-runs clean can
+deploy unhealthy.
 
 For a mounted disk that is not writable by the runtime user, prefer
 `App.spec.runtime.fsGroup`; `runtime` also provides `uid` and `gid`. A chown
