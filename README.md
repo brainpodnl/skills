@@ -9,13 +9,14 @@
 
 ## The skill
 
-[`skills/brainpod`](./skills/brainpod) covers the whole lifecycle: creating pods, building and pushing container images, composing resources, promoting draft revisions, changing what a running pod runs, and diagnosing unhealthy deployments.
+[`skills/brainpod`](./skills/brainpod) covers the whole lifecycle: getting a project onto GitHub and through BrainPod onboarding, shipping code changes as pull requests that deploy on merge, composing resources, promoting draft revisions, rolling back, and diagnosing failed builds and unhealthy deployments.
 
 It routes to use-case references it loads on demand:
 
-- [`references/deploy.md`](./skills/brainpod/references/deploy.md) — take an application from source to a running pod for the first time.
-- [`references/operate.md`](./skills/brainpod/references/operate.md) — change what an existing pod runs: resources, env, scale, databases, blueprints, and reverting a bad deploy.
-- [`references/debug.md`](./skills/brainpod/references/debug.md) — diagnose a deployment that failed, timed out, is unhealthy, or is not serving traffic.
+- [`references/onboard.md`](./skills/brainpod/references/onboard.md) — take a project from source to a live pod through GitHub and BrainPod onboarding.
+- [`references/operate.md`](./skills/brainpod/references/operate.md) — change what an existing pod runs: code, resources, env, secrets, scale, databases, services, and rollbacks.
+- [`references/debug.md`](./skills/brainpod/references/debug.md) — diagnose a build or deployment that failed, timed out, is unhealthy, or is not serving traffic.
+- [`references/local-build.md`](./skills/brainpod/references/local-build.md) — build and deploy from this machine when GitHub is not an option.
 
 ## Quick start
 
@@ -61,11 +62,11 @@ ln -s /path/to/brainpod-skills/skills/brainpod /path/to/skills-directory/brainpo
 
 ## Prerequisites
 
-You don't need to set anything up before you start. Ask the agent to deploy something to BrainPod and it handles onboarding for you — installing the CLI if it is missing, and signing you in.
+You don't need to set anything up before you start. Ask the agent to deploy something to BrainPod and it handles onboarding for you: installing the CLI if it is missing, signing you in, and walking you through connecting your GitHub repository.
 
 For reference, what it sets up on your behalf:
 
-**The `brainpod` CLI**, from [brainpodnl/cli](https://github.com/brainpodnl/cli). Linux and macOS on amd64 and arm64.
+**The `brainpod` CLI**, from [brainpodnl/cli](https://github.com/brainpodnl/cli). Linux and macOS on amd64 and arm64, Windows on amd64. [BrainPod Desktop](https://github.com/brainpodnl/desktop) can also install and update it, and installs this skill into your agents.
 
 **A signed-in session.** The agent runs `brainpod login` and opens the sign-in page for you — in an embedded browser pane where its harness has one, otherwise in your default browser. You approve there and the CLI stores the token itself, so there is no token to copy and paste. Starting the flow is the agent's part; approving it is yours.
 
@@ -77,17 +78,19 @@ export BRAINPOD_API_TOKEN=brain_...
 
 The CLI also accepts `--api-token` and `brainpod config set api-token <token>`. Configuration lives at `~/.config/brainpod/config.toml`.
 
-**Docker with Buildx**, required only for image builds.
+**Your project on GitHub.** BrainPod builds it in your repository's GitHub Actions and deploys every merge into its base branch. The agent opens pull requests for you to merge with the [`gh` CLI](https://cli.github.com); installing the BrainPod GitHub App, choosing its repositories, and merging stay with you.
+
+**Docker with Buildx**, only for the local-build fallback, which is not recommended.
 
 ## Usage
 
 Once installed, the agent uses the skill automatically when relevant — for example:
 
 - Deploying a repository to BrainPod from scratch
+- Fixing a failed build with a pull request
 - Adding a Postgres, MariaDB, or Valkey database to an existing pod
-- Changing environment variables, replica counts, or instance sizes
-- Installing a blueprint and pinning it to a manually built image
-- Reverting a bad deploy
+- Changing environment variables, secrets, replica counts, or instance sizes
+- Rolling back a bad deploy
 - Diagnosing a deployment that reports as deployed but is not responding
 
 ## Contributing
