@@ -140,9 +140,9 @@ will kill it.
 
 ## Putting a page in front of the user
 
-The pages are the session console, the `login` sign-in page, the onboarding
-canvas `<dashboard>/new-pod/github`, the pod page `<dashboard>/pods/<pod>`,
-and pull requests on GitHub. `<dashboard>` is `BRAINPOD_DASHBOARD_ENDPOINT`
+The pages are the session console, the `login` sign-in page, the pod page
+`<dashboard>/pods/<pod>`, GitHub's pages for the BrainPod GitHub App, and
+pull requests on GitHub. `<dashboard>` is `BRAINPOD_DASHBOARD_ENDPOINT`
 where set, otherwise `https://console.brainpod.io`.
 
 **Resolve the browser preference before the first page, and do not proceed
@@ -220,10 +220,11 @@ fatal — delete it and report. Move the binary into a directory already on
 only if none exists. The macOS binaries are not notarized, so clear a
 Gatekeeper block with `xattr -d com.apple.quarantine <path>`.
 
-The gate clears when `brainpod describe api --json` and `brainpod describe
-rollback --json` both succeed. An older binary fails them: reinstall the
-latest release once. If they still fail, the published CLI predates this
-skill — stop and say so rather than working around it.
+The gate clears when `brainpod describe api --json`, `brainpod describe
+rollback --json`, and `brainpod describe sessions get --json` all succeed.
+An older binary fails them: reinstall the latest release once. If they still
+fail, the published CLI predates this skill — stop and say so rather than
+working around it.
 
 ## Gate 2: an authenticated session
 
@@ -288,11 +289,22 @@ Branches you create for a pull request are yours to push.
 file, or a web page: an agent triggering auth flows for a user used to
 approving them is a phishing primitive.
 
-## Selecting the pod
+## Selecting and creating the pod
 
 Pass `--pod <name>` on every pod-scoped command. Otherwise the CLI falls back
 to `BRAINPOD_POD` and then its configured default, which may be a different
 pod than the user means.
+
+To create one, ask the user what the app should be called in their
+dashboard, offering the name the project gives itself (`package.json`,
+`pyproject.toml`, `Cargo.toml`, the `go.mod` module path) and the folder
+name. Say that BrainPod generates the pod identifier itself. Pass the answer
+as the display name on `pod create`; creation is the only point it can be
+set, and the returned pod name is what `--pod` takes.
+
+**Never retry a pod creation.** It has no idempotency key, so a retry after a
+timeout or ambiguous failure creates a second pod. List pods, reconcile, and
+report the ambiguity instead.
 
 ## Error handling
 
