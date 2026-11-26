@@ -20,15 +20,16 @@ application. Those are yours.
 
 Onboarding runs only on a pod that was never deployed; the API refuses any
 other with `PRECONDITION_FAILED`. Do not work around that refusal by
-redeploying, recreating, or emptying a pod. Before creating one, check that
-this project is not already on BrainPod: a
-`.github/workflows/deploy-to-brainpod-*.yml` on the base branch, or a matching
-pod in `brainpod pod list --json` whose `repo get` names this repository. If
-it is, the work is `operate.md`'s.
+redeploying, recreating, or emptying a pod. Before creating one, look for this
+project on BrainPod: a `.github/workflows/deploy-to-brainpod-*.yml` on the base
+branch, or a pod in `brainpod pod list --json` whose `repo get` names this
+repository. Only a matching pod whose `deployed` is set is `operate.md`'s; a
+link alone does not mean it was deployed.
 
-A pod the user already created for this project and never deployed may have
-an onboarding session: `sessions list --label purpose=repo-onboarding`. Follow
-an `active` one from Step 6 rather than starting another.
+A matching pod, or one the user already created for this project, that was
+never deployed is the pod to onboard. It may have an onboarding session:
+`sessions list --label purpose=repo-onboarding`. Follow an `active` one from
+Step 6 rather than starting another.
 
 ## Step 2: Get the code onto GitHub
 
@@ -66,20 +67,24 @@ reported there too; hand over its link the same way.
 
 ## Step 4: Create and link the pod
 
-Create the pod as `SKILL.md` describes, then link it:
+Reuse the project's never-deployed pod from Step 1; create one as `SKILL.md`
+describes only when there is none. Open the pod page.
+
+Linking is the user's consent to onboarding, so before linking tell them what
+it will do and get an explicit yes: BrainPod commits the pod's build
+configuration to the `brainpod/onboarding-<pod>` branch of their repository,
+builds it in their GitHub Actions (billed minutes on a private repository),
+deploys the pod on its own unless it needs their input, and opens a pull
+request whose merge turns on deploying every push to the base branch. Without
+that yes, stop here.
+
+Link only when `brainpod --pod <pod> repo get` shows no repository:
 
 ```bash
 brainpod --pod <pod> repo link <owner/name>
 ```
 
-A pod keeps its repository; linking another is refused. Open the pod page.
-
-Before starting, tell the user what onboarding will do, since linking is
-their consent to it: BrainPod commits the pod's build configuration to the
-`brainpod/onboarding-<pod>` branch of their repository, builds it in their
-GitHub Actions, deploys the pod on its own unless it needs their input, and
-opens a pull request whose merge turns on deploying every push to the base
-branch.
+A pod keeps its repository; linking another is refused.
 
 ## Step 5: Start onboarding
 
@@ -96,7 +101,10 @@ run, so an ambiguous failure is safe to repeat.
 brainpod --pod <pod> sessions get <session> --json
 ```
 
-Poll every 15 to 30 seconds, narrating changes rather than repeating them.
+On the first read, including a resumed session, compare `subject.sha` with
+the commit noted in Step 2. If they differ, onboarding is building other code
+than the user expects: tell them before going on. Then poll every 15 to 30
+seconds, narrating changes rather than repeating them.
 `runs` holds one run per step — `plan`, `image:<service>`, `wiring`,
 `assemble` — each with its state and error; `pullRequest` the pull request
 and its status.
