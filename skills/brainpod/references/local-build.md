@@ -72,20 +72,10 @@ Every reachable app also needs a `Route`. Check `brainpod blueprint list
 
 ## Step 3: Create or select the pod
 
-Ask the user what the app should be called in their dashboard, offering the
-name the project gives itself (`package.json`, `pyproject.toml`, `Cargo.toml`,
-the `go.mod` module path) and the folder name. Say that BrainPod generates the
-pod identifier itself. Pass the answer as the display name on `pod create`;
-creation is the only point it can be set.
-
-**Never retry a pod creation.** It has no idempotency key, so a retry after a
-timeout or ambiguous failure creates a second pod. List pods, reconcile, and
-report the ambiguity instead.
-
-Capture the returned pod name; the pod's registry namespace comes from it, so
-the pod must exist before the push. Open the pod page by the rules in
-`SKILL.md`. For an existing pod, inspect its draft first as `operate.md`
-describes.
+Create the pod as `SKILL.md` describes. Its registry namespace comes from the
+returned pod name, so the pod must exist before the push. Open the pod page
+by the rules in `SKILL.md`. For an existing pod, inspect its draft first as
+`operate.md` describes.
 
 ## Step 4: Build and push the image
 
