@@ -28,8 +28,9 @@ link alone does not mean it was deployed.
 
 A matching pod, or one the user already created for this project, that was
 never deployed is the pod to onboard. It may have an onboarding session:
-`sessions list --label purpose=repo-onboarding`. Follow an `active` one from
-Step 6 rather than starting another.
+`sessions list --label purpose=repo-onboarding`. Resume an `active` one
+rather than starting another: do Step 2 to establish the repository, ref and
+commit it should see, then skip to Step 6.
 
 ## Step 2: Get the code onto GitHub
 
